@@ -1,67 +1,305 @@
 const BhuSanketAuth = (() => {
-	let client;
-	let session;
-	let mode = 'signin';
-	let magicLinkCooldown = false;
-	const config = window.BHUSANKET_CONFIG || {};
-	const configured = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
-	const roles = ['Admin', 'District official', 'Field officer', 'Citizen'];
+    let firebaseAuth;
+    let currentUser;
+    let role = 'Citizen';
+    let mode = 'signin';
+    const config = window.BHUSANKET_CONFIG || {};
+    const firebaseConfig = config.firebase || {};
+    const configured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && window.firebase);
+    const roles = ['Admin', 'District official', 'Operator', 'Field officer', 'Citizen'];
+    const privilegedRoles = ['Admin', 'Operator', 'Field officer'];
+    const $ = id => document.getElementById(id);
 
-	function createClient() {
-		if (configured) client = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-	}
+    function message(text, error = false) {
+        const element = $('auth-message');
+        element.textContent = text;
+        element.classList.toggle('error', error);
+    }
 
-	function renderShell() {
-		document.body.classList.add('auth-locked');
-		const shell = document.createElement('div');
-		shell.id = 'auth-shell';
-		shell.innerHTML = `<div class="auth-card" role="dialog" aria-labelledby="auth-title">
-			<aside class="auth-story"><div class="auth-story-brand"><span class="auth-mark">▲</span><strong>BHUSANKET</strong></div><p class="auth-story-kicker">LANDSLIDE INTELLIGENCE NETWORK</p><div class="auth-signal"><span class="signal-orbit"></span><span class="signal-orbit"></span><span class="signal-core">●</span></div><div class="auth-story-copy"><p class="kicker">NORTH EASTERN REGION / 24·7 WATCH</p><h2>See risk earlier.<br><em>Act with clarity.</em></h2><p>One secure workspace for verified alerts, terrain intelligence, and ground observations.</p></div><div class="auth-story-foot"><span><i class="dot green"></i> Monitoring network online</span><span>v0.1 prototype</span></div></aside>
-			<section class="auth-panel"><div class="auth-panel-top"><div class="auth-brand"><span class="auth-mark">▲</span><span>BHUSANKET</span><small>FIELD INTELLIGENCE NETWORK</small></div><span class="auth-live"><i></i> SYSTEM ONLINE</span></div><div class="auth-heading"><p class="kicker">SECURE ACCESS / REGIONAL WATCH</p><span class="auth-step">01 <i></i> 02</span></div><h1 id="auth-title">Sign in to the situation room</h1><p id="auth-copy" class="auth-copy">Access alerts, zone intelligence, and field coordination tools.</p><button id="google-login" class="auth-google"><span>G</span> Continue with Google</button><div class="auth-divider"><span>or use email</span></div><form id="email-login" class="auth-form"><label id="name-field" class="auth-name-field">Full name<input id="auth-name" type="text" autocomplete="name" placeholder="Your name"></label><label>Email address<input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>Password<div class="password-field"><input id="auth-password" type="password" autocomplete="current-password" minlength="6" required placeholder="At least 6 characters"><button type="button" id="toggle-password" aria-label="Show password">Show</button></div></label><div class="auth-under-row"><label id="confirm-field" class="auth-confirm-field">Confirm password<div class="password-field"><input id="auth-confirm" type="password" autocomplete="new-password" minlength="6" placeholder="Repeat password"><button type="button" id="toggle-confirm" aria-label="Show password">Show</button></div></label><button type="button" class="auth-link auth-forgot" id="forgot-login">Forgot password?</button></div><div class="auth-actions"><button type="submit" id="submit-auth" data-auth-action="signin">Sign in <span>→</span></button><button type="button" class="auth-link" id="magic-login">Email me a sign-in link</button></div></form><p id="auth-message" class="auth-message" role="status"></p><div class="auth-switch"><span id="switch-copy">New to BhuSanket?</span><button type="button" class="auth-link" id="switch-auth">Create an account <span>→</span></button></div><small class="auth-demo-note">Protected access for authorised response teams.</small></section>
-		</div>`;
-		document.body.prepend(shell);
-		$('google-login').addEventListener('click', signInWithGoogle);
-		$('email-login').addEventListener('submit', signInWithEmail);
-		$('magic-login').addEventListener('click', sendMagicLink);
-		$('forgot-login').addEventListener('click', resetPassword);
-		$('switch-auth').addEventListener('click', toggleMode);
-		$('toggle-password').addEventListener('click', () => togglePassword('auth-password', 'toggle-password'));
-		$('toggle-confirm').addEventListener('click', () => togglePassword('auth-confirm', 'toggle-confirm'));
-		updateMode();
-	}
+    function setBusy(busy) {
+        $('submit-auth').disabled = busy;
+        $('switch-auth').disabled = busy;
+    }
 
-	function $(id) { return document.getElementById(id); }
-	function message(text, error = false) { const element = $('auth-message'); element.textContent = text; element.classList.toggle('error', error); }
-	function callbackUrl() { return `${window.location.origin}${window.location.pathname}`; }
-	function setVisible(visible) { const shell = $('auth-shell'); shell.classList.toggle('hidden', !visible); shell.hidden = !visible; shell.style.display = visible ? 'grid' : 'none'; document.body.classList.toggle('auth-locked', visible); }
-	function setDemoMode() { setVisible(false); addUserBadge('Demo mode'); }
-	function updateMode() { const signup = mode === 'signup'; $('auth-title').textContent = signup ? 'Create your field account' : 'Sign in to the situation room'; $('auth-copy').textContent = signup ? 'Join the network to submit observations and follow verified alerts.' : 'Access alerts, zone intelligence, and field coordination tools.'; $('submit-auth').innerHTML = signup ? 'Create account <span>→</span>' : 'Sign in <span>→</span>'; $('switch-copy').textContent = signup ? 'Already have an account?' : 'New to BhuSanket?'; $('switch-auth').innerHTML = signup ? 'Sign in <span>→</span>' : 'Create an account <span>→</span>'; $('name-field').hidden = !signup; $('confirm-field').hidden = !signup; $('name-field').style.display = signup ? 'block' : 'none'; $('confirm-field').style.display = signup ? 'block' : 'none'; $('forgot-login').hidden = signup; $('magic-login').hidden = signup; $('forgot-login').style.display = signup ? 'none' : 'block'; $('magic-login').style.display = signup ? 'none' : 'block'; $('auth-password').autocomplete = signup ? 'new-password' : 'current-password'; }
-	function toggleMode() { mode = mode === 'signin' ? 'signup' : 'signin'; $('email-login').reset(); message(''); updateMode(); }
-	function addUserBadge(label, user = null) {
-		const deck = document.querySelector('.deck-status');
-		if (!deck || document.getElementById('auth-user-badge')) return;
-		const badge = document.createElement('span');
-		badge.id = 'auth-user-badge';
-		badge.className = 'auth-user-badge';
-		badge.innerHTML = `<button id="profile-toggle" class="profile-toggle" aria-expanded="false"><i class="dot cyan"></i><span class="profile-label"></span><b>⌄</b></button><div id="profile-menu" class="profile-menu"><strong class="profile-name"></strong><small class="profile-email"></small><span class="profile-role"></span><button id="auth-logout" class="profile-logout">Sign out <span>↪</span></button></div>`;
-		badge.querySelector('.profile-label').textContent = label;
-		badge.querySelector('.profile-name').textContent = user?.user_metadata?.full_name || user?.user_metadata?.name || label;
-		badge.querySelector('.profile-email').textContent = user?.email || '';
-		badge.querySelector('.profile-role').textContent = `Role: ${label}`;
-		deck.prepend(badge);
-		$('profile-toggle').addEventListener('click', () => { const open = badge.classList.toggle('open'); $('profile-toggle').setAttribute('aria-expanded', String(open)); });
-		$('auth-logout').addEventListener('click', signOut);
-	}
-	async function signInWithGoogle() { message('Opening Google sign-in...'); const { error } = await client.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: callbackUrl() } }); if (error) message(error.message, true); }
-	function friendlyError(error) { if (!error) return ''; if (/rate limit|too many requests/i.test(error.message)) return 'Supabase has temporarily paused email delivery for this project. No new link was sent. Use Google sign-in, or wait for the limit to reset and try once later.'; if (/invalid login credentials/i.test(error.message)) return 'That email and password do not match. If you used Google, choose Continue with Google instead. To use email sign-in, create an account with a password first.'; if (/email not confirmed/i.test(error.message)) return 'Please confirm your email address before signing in.'; return error.message; }
-	async function signInWithEmail(event) { event.preventDefault(); const email = $('auth-email').value; const password = $('auth-password').value; if (mode === 'signup') { if ($('auth-password').value !== $('auth-confirm').value) return message('Passwords do not match.', true); const { data, error } = await client.auth.signUp({ email, password, options: { data: { full_name: $('auth-name').value.trim() }, emailRedirectTo: callbackUrl() } }); if (error) return message(friendlyError(error), true); message(data.session ? 'Account created. Opening your workspace...' : 'Account created. Check your email to confirm access.'); return; } const { error } = await client.auth.signInWithPassword({ email, password }); if (error) message(friendlyError(error), true); }
-	async function sendMagicLink() { const email = $('auth-email').value; if (!email) return message('Enter your email address first.', true); if (magicLinkCooldown) return message('Please wait before requesting another sign-in email.', true); magicLinkCooldown = true; $('magic-login').disabled = true; $('magic-login').textContent = 'Checking email delivery...'; const { error } = await client.auth.signInWithOtp({ email, options: { emailRedirectTo: callbackUrl() } }); if (error) { message(friendlyError(error), true); $('magic-login').textContent = 'Email unavailable'; setTimeout(() => { magicLinkCooldown = false; $('magic-login').disabled = false; $('magic-login').textContent = 'Email me a sign-in link'; }, 60000); return; } message('Sign-in link sent. Open the newest email in your inbox and click the link to continue.'); $('magic-login').textContent = 'Email sent'; setTimeout(() => { magicLinkCooldown = false; $('magic-login').disabled = false; $('magic-login').textContent = 'Email me a sign-in link'; }, 60000); }
-	async function resetPassword() { const email = $('auth-email').value; if (!email) return message('Enter your email address first.', true); const { error } = await client.auth.resetPasswordForEmail(email, { redirectTo: callbackUrl() }); message(error ? friendlyError(error) : 'Password reset instructions sent to your email.', Boolean(error)); }
-	function togglePassword(inputId, buttonId) { const input = $(inputId); const visible = input.type === 'text'; input.type = visible ? 'password' : 'text'; $(buttonId).textContent = visible ? 'Show' : 'Hide'; }
-	async function signOut() { if (client) await client.auth.signOut(); session = null; document.getElementById('auth-user-badge')?.remove(); if (configured) setVisible(true); }
-	function applySession(nextSession) { session = nextSession; setVisible(!session); if (session) { const role = session.user.app_metadata?.role || session.user.user_metadata?.role || 'Citizen'; addUserBadge(role, session.user); document.dispatchEvent(new CustomEvent('bhusanket:authenticated', { detail: { session, role } })); } }
-	function init() { renderShell(); if (!configured) return setDemoMode(); createClient(); client.auth.getSession().then(({ data }) => applySession(data.session)); client.auth.onAuthStateChange((_event, nextSession) => applySession(nextSession)); }
-	return { init, getSession: () => session, isConfigured: () => configured, roles };
+    function setVisible(visible) {
+        const shell = $('auth-shell');
+        shell.classList.toggle('hidden', !visible);
+        shell.hidden = !visible;
+        document.body.classList.toggle('auth-locked', visible);
+    }
+
+    function renderShell() {
+        document.body.classList.add('auth-locked');
+        const shell = document.createElement('div');
+        shell.id = 'auth-shell';
+        shell.innerHTML = `
+            <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+                <aside class="auth-story">
+                    <div class="auth-story-brand">
+                        <span class="auth-mark">&#9650;</span>
+                        <span class="auth-story-brand-name">BHUSANKET</span>
+                    </div>
+                    <p class="auth-story-kicker">Landslide Intelligence Network</p>
+                    <div class="auth-signal"></div>
+                    <div class="auth-story-copy">
+                        <p class="kicker">REGIONAL WATCH</p>
+                        <h2>A clearer view of<br><em>changing ground</em> conditions.</h2>
+                        <p>Real-time terrain risk, environmental telemetry, and field coordination in one workspace.</p>
+                    </div>
+                    <div class="auth-story-foot">
+                        <span><i class="pulse-dot"></i>24 / 7 monitoring</span>
+                        <span>8 priority zones</span>
+                    </div>
+                </aside>
+                <section class="auth-panel">
+                    <div class="auth-panel-top">
+                        <div class="auth-panel-brand">
+                            <span class="auth-panel-brand-name">BHUSANKET</span>
+                            <span class="auth-panel-brand-sub">Secure Access</span>
+                        </div>
+                        <span class="auth-live"><i class="pulse-dot"></i>System online</span>
+                    </div>
+
+                    <div class="auth-heading-row">
+                        <p class="auth-kicker">SECURE ACCESS / REGIONAL WATCH</p>
+                        <span class="auth-step" id="auth-mode-label">SIGN IN</span>
+                    </div>
+                    <h1 class="auth-title" id="auth-title">Sign in to the situation room</h1>
+                    <p class="auth-copy" id="auth-copy">Access alerts, zone intelligence, and field coordination tools.</p>
+
+                    <div class="auth-provider-grid">
+                        <button type="button" class="auth-provider-btn" id="google-login">
+                            <span class="auth-provider-icon google-icon">G</span>
+                            <span>Continue with Google</span>
+                        </button>
+                        <button type="button" class="auth-provider-btn" id="github-login">
+                            <span class="auth-provider-icon">&#9670;</span>
+                            <span>Continue with GitHub</span>
+                        </button>
+                    </div>
+
+                    <div class="auth-divider"><span>or use email and password</span></div>
+
+                    <form id="email-login" class="auth-form" novalidate>
+                        <label class="auth-field" id="name-field" hidden>
+                            <span class="auth-field-label">Full name</span>
+                            <input class="auth-input" id="auth-name" type="text" autocomplete="name" placeholder="Your name">
+                        </label>
+
+                        <label class="auth-field">
+                            <span class="auth-field-label">Email address</span>
+                            <input class="auth-input" id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com">
+                        </label>
+
+                        <label class="auth-field">
+                            <span class="auth-field-label">Password</span>
+                            <div class="password-field">
+                                <input class="auth-input" id="auth-password" type="password" autocomplete="current-password" minlength="8" required placeholder="At least 8 characters">
+                                <button type="button" class="password-toggle" id="toggle-password">Show</button>
+                            </div>
+                        </label>
+
+                        <label class="auth-field" id="confirm-field" hidden>
+                            <span class="auth-field-label">Confirm password</span>
+                            <div class="password-field">
+                                <input class="auth-input" id="auth-confirm" type="password" autocomplete="new-password" minlength="8" placeholder="Repeat password">
+                                <button type="button" class="password-toggle" id="toggle-confirm">Show</button>
+                            </div>
+                        </label>
+
+                        <div class="auth-under-row">
+                            <button type="button" class="auth-forgot" id="forgot-login">Forgot password?</button>
+                        </div>
+
+                        <button type="submit" class="auth-submit" id="submit-auth">
+                            <span id="submit-auth-label">Sign in</span>
+                            <span class="arrow">&#8594;</span>
+                        </button>
+                    </form>
+
+                    <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+
+                    <div class="auth-switch">
+                        <span id="switch-copy">New to BhuSanket?</span>
+                        <button type="button" class="auth-link" id="switch-auth">
+                            <span id="switch-auth-label">Create an account</span>
+                            <span>&#8594;</span>
+                        </button>
+                    </div>
+
+                    <small class="auth-demo-note" id="demo-note"></small>
+                </section>
+            </div>`;
+        document.body.prepend(shell);
+
+        $('email-login').addEventListener('submit', signInWithEmail);
+        $('google-login').addEventListener('click', () => signInWithProvider('google'));
+        $('github-login').addEventListener('click', () => signInWithProvider('github'));
+        $('forgot-login').addEventListener('click', resetPassword);
+        $('switch-auth').addEventListener('click', toggleMode);
+        $('toggle-password').addEventListener('click', () => togglePassword('auth-password', 'toggle-password'));
+        $('toggle-confirm').addEventListener('click', () => togglePassword('auth-confirm', 'toggle-confirm'));
+        updateMode();
+    }
+
+    function updateMode() {
+        const signup = mode === 'signup';
+        $('auth-mode-label').textContent = signup ? 'SIGN UP' : 'SIGN IN';
+        $('auth-title').textContent = signup ? 'Create your field account' : 'Sign in to the situation room';
+        $('auth-copy').textContent = signup
+            ? 'Create a secure account to access your assigned BhuSanket workspace.'
+            : 'Access alerts, zone intelligence, and field coordination tools.';
+        $('submit-auth-label').textContent = signup ? 'Create account' : 'Sign in';
+        $('switch-copy').textContent = signup ? 'Already have an account?' : 'New to BhuSanket?';
+        $('switch-auth-label').textContent = signup ? 'Sign in' : 'Create an account';
+        $('name-field').hidden = !signup;
+        $('confirm-field').hidden = !signup;
+        $('forgot-login').hidden = signup;
+        $('auth-name').required = signup;
+        $('auth-confirm').required = signup;
+        $('auth-password').autocomplete = signup ? 'new-password' : 'current-password';
+    }
+
+    function toggleMode() {
+        mode = mode === 'signin' ? 'signup' : 'signin';
+        $('email-login').reset();
+        message('');
+        updateMode();
+    }
+
+    function addUserBadge(label, user = null) {
+        const deck = document.querySelector('.deck-status');
+        if (!deck || document.getElementById('auth-user-badge')) return;
+        const badge = document.createElement('span');
+        badge.id = 'auth-user-badge';
+        badge.className = 'auth-user-badge';
+        badge.innerHTML = `<button id="profile-toggle" class="profile-toggle" aria-expanded="false" aria-controls="profile-menu"><i class="dot cyan"></i><span class="profile-label"></span><b class="chevron">&#8964;</b></button><div id="profile-menu" class="profile-menu" role="dialog" aria-label="User settings"><div class="profile-menu-heading"><span class="profile-menu-icon">&#9881;</span><div><strong>User settings</strong><small>Account and access</small></div></div><div class="profile-account"><span class="profile-caption">SIGNED IN AS</span><strong class="profile-name"></strong><small class="profile-email"></small></div><div class="profile-role-row"><span>ROLE</span><b class="profile-role"></b></div><div class="profile-future"><span class="profile-caption">COMING LATER</span><div class="profile-future-row"><span>SMS alerts</span><em>PLANNED</em></div><div class="profile-future-row"><span>Notification sound</span><em>PLANNED</em></div></div><button id="auth-logout" class="profile-logout">Sign out <span>&#8618;</span></button></div>`;
+        badge.querySelector('.profile-label').textContent = label;
+        badge.querySelector('.profile-name').textContent = user?.displayName || label;
+        badge.querySelector('.profile-email').textContent = user?.email || '';
+        badge.querySelector('.profile-role').textContent = `Role: ${role}`;
+        deck.prepend(badge);
+        $('profile-toggle').addEventListener('click', () => {
+            const open = badge.classList.toggle('open');
+            $('profile-toggle').setAttribute('aria-expanded', String(open));
+        });
+        $('auth-logout').addEventListener('click', signOut);
+        document.addEventListener('click', event => {
+            if (!badge.contains(event.target)) {
+                badge.classList.remove('open');
+                $('profile-toggle')?.setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    function updateAccess(nextRole) {
+        role = roles.includes(nextRole) ? nextRole : 'Citizen';
+        document.querySelectorAll('[data-rbac]').forEach(element => {
+            const allowed = element.dataset.rbac.split(',').map(item => item.trim());
+            element.classList.toggle('rbac-hidden', !allowed.includes(role));
+        });
+        const canAccessReports = privilegedRoles.includes(role);
+        document.querySelector('.nav-item[data-view="reports"]')?.classList.toggle('rbac-hidden', !canAccessReports);
+        document.querySelector('[data-section="reports"]')?.classList.toggle('rbac-hidden', !canAccessReports);
+        const reportForm = document.getElementById('report-form')?.closest('.report-form');
+        reportForm?.classList.toggle('rbac-hidden', !canAccessReports);
+        document.dispatchEvent(new CustomEvent('bhusanket:role-changed', { detail: { role } }));
+    }
+
+    async function signInWithProvider(providerName) {
+        if (!firebaseAuth) return message('Firebase authentication is not configured.', true);
+        const provider = providerName === 'github' ? new firebase.auth.GithubAuthProvider() : new firebase.auth.GoogleAuthProvider();
+        setBusy(true);
+        try {
+            await firebaseAuth.signInWithPopup(provider);
+        } catch (error) {
+            message(error.message, true);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function signInWithEmail(event) {
+        event.preventDefault();
+        if (!firebaseAuth) return message('Firebase authentication is not configured.', true);
+        const email = $('auth-email').value.trim();
+        const password = $('auth-password').value;
+        if (!email || !password) return message('Enter your email and password.', true);
+        setBusy(true);
+        try {
+            if (mode === 'signup') {
+                if (password !== $('auth-confirm').value) {
+                    setBusy(false);
+                    return message('Passwords do not match.', true);
+                }
+                await firebaseAuth.createUserWithEmailAndPassword(email, password);
+                await firebaseAuth.currentUser.updateProfile({ displayName: $('auth-name').value.trim() });
+                message('Account created. Opening your workspace...');
+            } else {
+                await firebaseAuth.signInWithEmailAndPassword(email, password);
+            }
+        } catch (error) {
+            message(error.message, true);
+        } finally {
+            setBusy(false);
+        }
+    }
+
+    async function resetPassword() {
+        if (!firebaseAuth) return message('Firebase authentication is not configured.', true);
+        const email = $('auth-email').value.trim();
+        if (!email) return message('Enter your email address first.', true);
+        try {
+            await firebaseAuth.sendPasswordResetEmail(email);
+            message('Password reset instructions sent to your email.');
+        } catch (error) {
+            message(error.message, true);
+        }
+    }
+
+    function togglePassword(inputId, buttonId) {
+        const input = $(inputId);
+        const visible = input.type === 'text';
+        input.type = visible ? 'password' : 'text';
+        $(buttonId).textContent = visible ? 'Show' : 'Hide';
+    }
+
+    async function signOut() {
+        if (firebaseAuth) await firebaseAuth.signOut();
+        currentUser = null;
+        document.getElementById('auth-user-badge')?.remove();
+        updateAccess('Citizen');
+        setVisible(true);
+    }
+
+    function applyUser(user) {
+        currentUser = user;
+        if (!user) return setVisible(true);
+        user.getIdTokenResult(true).then(token => {
+            updateAccess(token.claims.role || 'Citizen');
+            addUserBadge(role, user);
+            setVisible(false);
+            document.dispatchEvent(new CustomEvent('bhusanket:authenticated', { detail: { user, role } }));
+        });
+    }
+
+    function init() {
+        renderShell();
+        if (!configured) {
+            $('demo-note').textContent = 'Demo mode is active. Add Firebase config to enable secure authentication.';
+            setVisible(false);
+            updateAccess('Citizen');
+            addUserBadge('Demo mode');
+            return;
+        }
+        firebase.initializeApp(firebaseConfig);
+        firebaseAuth = firebase.auth();
+        firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+        firebaseAuth.onAuthStateChanged(applyUser);
+    }
+
+    return { init, getUser: () => currentUser, getRole: () => role, hasRole: (...allowed) => allowed.includes(role), isConfigured: () => configured, roles, privilegedRoles };
 })();
 
+window.BhuSanketAuth = BhuSanketAuth;
 document.addEventListener('DOMContentLoaded', () => BhuSanketAuth.init());

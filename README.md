@@ -104,7 +104,7 @@ The current tests cover validation, deterministic and bounded scores, risk thres
 
 The repository also includes `backend/ml_model.py`, a deterministic Random Forest classifier trained from the clearly labeled prototype dataset in `backend/data/historical_training.json`. It compares the learned risk level with the explainable baseline, reports model confidence, and identifies the three strongest learned drivers.
 
-This training file is synthetic prototype data, not a validated historical disaster record. Replace it with reviewed event history and evaluate it on held-out data before using model output operationally. The protected API endpoint is:
+This training file is synthetic prototype data, not a validated historical disaster record. Replace it with reviewed event history and evaluate it on held-out data before using model output operationally. Normal zone, alert, map, and simulation responses now include the predictive output while retaining the deterministic score for audit. The model inspection endpoint is:
 
 ```text
 POST /api/ml/compare
@@ -147,37 +147,22 @@ Natural next steps are to connect the dashboard to an API backed by `risk_engine
 
 ## Configure authentication
 
-The authentication foundation uses Supabase Auth. It runs in demo mode while credentials are blank, so the existing dashboard can still be explored locally.
+The authentication foundation uses Firebase Authentication. It runs in demo mode while the Firebase configuration is blank, so the dashboard can still be explored locally.
 
-### 1. Create a Supabase project
+### 1. Create and configure a Firebase project
 
-Create a project at [supabase.com](https://supabase.com), then open **Project Settings > API**. Copy the project URL and the public anon key into `frontend/js/config.js`:
+Create a Firebase project, enable Email/Password, Google, and GitHub providers in **Authentication > Sign-in method**, and register a Web app. Copy its configuration into `frontend/js/config.js`. The GitHub OAuth client ID and secret are configured in Firebase, never in this repository.
 
 ```js
 window.BHUSANKET_CONFIG = {
-	supabaseUrl: 'https://your-project.supabase.co',
-	supabaseAnonKey: 'your-public-anon-key',
+	firebase: { apiKey: '...', authDomain: '...', projectId: '...', storageBucket: '...', messagingSenderId: '...', appId: '...' },
 	apiBaseUrl: 'http://localhost:8001'
 };
 ```
 
-The anon key is intended for browser use. Never put a Supabase service-role key in `frontend/` or commit it to Git.
+The Play Games button is intentionally Android-only. Add Play Games sign-in later in the Android client and exchange its credential with Firebase.
 
-### 2. Create the database tables
-
-Open the Supabase **SQL Editor**, paste the contents of [`backend/supabase_schema.sql`](backend/supabase_schema.sql), and run it. New users default to the `Citizen` role.
-
-### 3. Enable sign-in providers
-
-In **Authentication > Providers**:
-
-- Enable Email for password sign-in and magic links.
-- Enable Google for Google login.
-- Add the local callback URL `http://localhost:8000/` under the allowed redirect URLs.
-
-Google login also requires a Google Cloud OAuth client. Add the Supabase callback URL shown in the Google provider settings to the OAuth client's authorised redirect URIs. Keep the Google client secret inside Supabase, not in this repository.
-
-### 4. Run the API
+### 2. Run the API
 
 Install dependencies and copy the environment template:
 
@@ -186,17 +171,26 @@ python3 -m pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Set `SUPABASE_URL` in `.env`, then start the API from the repository root:
+Set `GOOGLE_APPLICATION_CREDENTIALS` in `.env` to a Firebase service-account JSON file, then start the API from the repository root:
 
 ```bash
-uvicorn backend.app:app --reload --port 8001 --env-file .env
+flask --app backend.app run --host 0.0.0.0 --port 8001 --debug
 ```
 
-The API accepts Supabase access tokens as `Authorization: Bearer <token>`. `GET /api/me` is protected for any signed-in user, while `GET /api/admin/users` is restricted to users whose Supabase `app_metadata.role` is `Admin`.
+The API accepts Firebase ID tokens as `Authorization: Bearer <token>`. Report creation and editing are restricted to `Operator`, `Field officer`, and `Admin` roles.
 
 ### 5. Assign roles
 
-For security, users cannot promote themselves. Create the first admin through the Supabase dashboard or a server-side admin script, then set the role in both the `profiles` record and the user's Supabase `app_metadata`. Keep role changes behind an Admin-only server route in production.
+### 3. Assign roles
+
+For security, users cannot promote themselves. Set Firebase custom claims from a trusted Admin SDK script or Admin-only server route:
+
+```python
+from firebase_admin import auth
+auth.set_custom_user_claims(user_id, {'role': 'Operator'})
+```
+
+New accounts default to `Citizen`. Users must refresh their token after a role change.
 
 ## License
 

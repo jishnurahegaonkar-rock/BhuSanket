@@ -9,6 +9,10 @@ from typing import Any
 from flask import Flask, jsonify, request, send_from_directory
 
 from .alerts import ALERT_STATES, build_alert, priority_queue
+from .auth import require_roles
+from .notifications import notifications_for_alert
+from .integrations import provider_statuses
+from .ml_model import compare_risk
 from .simulator import DataStore, SCENARIO_BOOSTS, simulate_zone
 
 
@@ -94,10 +98,25 @@ def _risk_record(
     scenario: str = "Normal",
 ) -> dict[str, Any]:
     result = simulate_zone(zone, scenario)
+    comparison = compare_risk(result)
+    prediction = comparison["model"]["prediction"]
+    prediction_centers = {"Monitoring": 20, "Advisory": 45, "High": 65, "Critical": 90}
+    predictive_score = round(result["risk_score"] * .55 + prediction_centers[prediction] * .45)
 
     return {
         "zone_id": zone["id"],
         **result,
+        "baseline_risk_score": result["risk_score"],
+        "baseline_risk_level": result["risk_level"],
+        "risk_score": predictive_score,
+        "risk_level": prediction,
+        "confidence": comparison["model"]["confidence"],
+        "model_name": comparison["model"]["name"],
+        "model_prediction": prediction,
+        "model_confidence": comparison["model"]["confidence"],
+        "model_explanation": comparison["model"]["explanation"],
+        "model_drivers": comparison["model"]["top_drivers"],
+        "baseline_model_agrees": comparison["comparison"]["agrees"],
     }
 
 
@@ -325,7 +344,7 @@ def health() -> Any:
 
 @app.get("/api/zones")
 def zones() -> Any:
-    return jsonify(_zone_records())
+    return jsonify([_risk_record(zone) for zone in _zone_records()])
 
 
 @app.get("/api/sensors")
@@ -399,6 +418,16 @@ def risk() -> Any:
     )
 
 
+@app.post("/api/ml/compare")
+def ml_compare() -> Any:
+    """Compare a supplied zone with the explainable baseline model."""
+    payload = request.get_json(silent=True) or {}
+    try:
+        return jsonify(compare_risk(payload))
+    except (KeyError, TypeError, ValueError) as error:
+        return jsonify({"error": str(error)}), 400
+
+
 @app.get("/api/alerts")
 def alerts() -> Any:
 
@@ -439,6 +468,18 @@ def risk_history() -> Any:
     return jsonify(
         store.recent("risk_history")
     )
+
+
+@app.get("/api/notifications")
+def notifications() -> Any:
+    """Return simulated delivery records for the notification center."""
+    return jsonify(store.recent("notification_logs"))
+
+
+@app.get("/api/integrations")
+def integrations() -> Any:
+    """Return external data providers and their current mock status."""
+    return jsonify(provider_statuses())
 
 
 @app.get("/api/reports")
@@ -560,6 +601,11 @@ def run_simulation() -> Any:
             result,
         )
 
+        alert["id"] = store.save_alert(alert)
+        for notification in notifications_for_alert({**alert, "location": zone["name"]}):
+            notification["alert_id"] = alert["id"]
+            store.save_notification(notification)
+
         store.save_sensor_update(
             {
                 "zone_id": result["zone_id"],
@@ -573,8 +619,6 @@ def run_simulation() -> Any:
         store.save_risk_history(result)
 
         alerts.append(alert)
-
-        store.save_alert(alert)
 
     return jsonify(
         {
@@ -590,6 +634,7 @@ def run_simulation() -> Any:
 
 
 @app.post("/api/reports")
+@require_roles("Operator", "Field officer", "Admin")
 def create_report() -> Any:
 
     payload = (
@@ -661,6 +706,7 @@ def create_report() -> Any:
 
 
 @app.patch("/api/reports/<int:report_id>")
+@require_roles("Operator", "Field officer", "Admin")
 def update_report(
     report_id: int,
 ) -> Any:

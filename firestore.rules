@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return signedIn() && request.auth.token.role == role;
+    }
+
+    function isOperator() {
+      return signedIn() && request.auth.token.role in [
+        'Operator', 'Field officer', 'Admin'
+      ];
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && request.auth.uid == userId
+        && !('role' in request.resource.data);
+      allow delete: if false;
+    }
+
+    match /zones/{zoneId} {
+      allow read: if signedIn();
+      allow write: if hasRole('Admin');
+    }
+
+    match /sensors/{sensorId} {
+      allow read: if signedIn();
+      allow write: if hasRole('Admin');
+    }
+
+    match /alerts/{alertId} {
+      allow read: if signedIn();
+      allow write: if hasRole('Admin');
+    }
+
+    match /field_reports/{reportId} {
+      allow read: if signedIn();
+      allow create: if isOperator()
+        && request.resource.data.submittedBy == request.auth.uid;
+      allow update: if isOperator();
+      allow delete: if hasRole('Admin');
+    }
+
+    match /notification_logs/{notificationId} {
+      allow read: if signedIn();
+      allow write: if hasRole('Admin');
+    }
+  }
+}
