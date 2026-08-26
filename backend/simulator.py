@@ -112,6 +112,18 @@ class DataStore:
 					confidence REAL NOT NULL,
 					recorded_at TEXT NOT NULL
 				);
+				CREATE TABLE IF NOT EXISTS notification_logs (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					alert_id INTEGER,
+					zone_id TEXT NOT NULL,
+					channel TEXT NOT NULL,
+					language TEXT NOT NULL DEFAULT 'en',
+					template_key TEXT NOT NULL,
+					message TEXT NOT NULL,
+					status TEXT NOT NULL DEFAULT 'Simulated',
+					provider TEXT NOT NULL DEFAULT 'prototype',
+					created_at TEXT NOT NULL
+				);
 				"""
 			)
 			columns = {row[1] for row in connection.execute("PRAGMA table_info(field_reports)")}
@@ -146,6 +158,11 @@ class DataStore:
 			cursor = connection.execute("INSERT INTO alerts (zone_id, level, title, reason, recommended_action, risk_score, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (alert["zone_id"], alert["level"], alert["title"], alert["reason"], alert["recommended_action"], alert["risk_score"], alert.get("status", "Active"), self.timestamp()))
 			return int(cursor.lastrowid)
 
+	def save_notification(self, notification: Mapping[str, Any]) -> int:
+		with self.connection() as connection:
+			cursor = connection.execute("INSERT INTO notification_logs (alert_id, zone_id, channel, language, template_key, message, status, provider, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (notification.get("alert_id"), notification["zone_id"], notification["channel"], notification.get("language", "en"), notification["template_key"], notification["message"], notification.get("status", "Simulated"), notification.get("provider", "prototype"), self.timestamp()))
+			return int(cursor.lastrowid)
+
 	def save_sensor_update(self, update: Mapping[str, Any]) -> int:
 		with self.connection() as connection:
 			cursor = connection.execute("INSERT INTO sensor_updates (zone_id, rainfall, soil_moisture, temperature, accumulated_rainfall, recorded_at) VALUES (?, ?, ?, ?, ?, ?)", (update["zone_id"], update["rainfall"], update["soil_moisture"], update["temperature"], update["accumulated_rainfall"], update.get("recorded_at", self.timestamp())))
@@ -162,7 +179,7 @@ class DataStore:
 			return int(cursor.lastrowid)
 
 	def recent(self, table: str, limit: int = 50) -> list[dict[str, Any]]:
-		if table not in {"field_reports", "alerts", "sensor_updates", "simulation_events", "risk_history"}:
+		if table not in {"field_reports", "alerts", "sensor_updates", "simulation_events", "risk_history", "notification_logs"}:
 			raise ValueError(f"unsupported table: {table}")
 		if not isinstance(limit, int) or limit < 1:
 			raise ValueError("limit must be a positive integer")
