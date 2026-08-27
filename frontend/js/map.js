@@ -1,27 +1,100 @@
 const MapView = (() => {
-	let map; let zoneLayer; let safetyLayer; let selectedMarker; let activeMode = 'risk'; let selectZone;
-	const layers = {};
-	function init(selectCallback) {
-		selectZone = selectCallback;
-		const element = document.getElementById('risk-map');
-		if (window.L) {
-			map = L.map(element, { zoomControl:false, attributionControl:true, minZoom:5, maxZoom:18, zoomSnap:.25, zoomDelta:.5, scrollWheelZoom:true, wheelDebounceTime:20, wheelPxPerZoomLevel:90, zoomAnimation:true, fadeAnimation:true, markerZoomAnimation:true, touchZoom:true, inertia:true, worldCopyJump:false }).setView([26.85, 93.7], 6);
-			L.control.zoom({ position:'bottomright' }).addTo(map);
-			layers.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom:17, maxNativeZoom:17, tileSize:256, updateWhenZooming:false, updateWhenIdle:true, keepBuffer:4, attribution:'OpenTopoMap' });
-			layers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom:19, maxNativeZoom:19, tileSize:256, updateWhenZooming:false, updateWhenIdle:true, keepBuffer:4, attribution:'Esri World Imagery' });
-			layers.roads = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, maxNativeZoom:19, opacity:.42, updateWhenZooming:false, updateWhenIdle:true, keepBuffer:4, attribution:'OpenStreetMap' });
-			layers.satellite.addTo(map); layers.roads.addTo(map); zoneLayer = L.layerGroup().addTo(map); safetyLayer = L.layerGroup().addTo(map);
-		}
-		document.querySelectorAll('.map-control').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.map-control').forEach(item => item.classList.remove('active')); button.classList.add('active'); activeMode = button.dataset.mapMode; renderMode(activeMode); }));
-		window.addEventListener('resize', resize);
-		document.addEventListener('bhusanket:authenticated', resize);
-		document.addEventListener('bhusanket:show-safety', event => renderSafety(event.detail));
-	}
-	function resize() { if (!map) return; requestAnimationFrame(() => { map.invalidateSize({ animate:false, pan:false }); map.setView(map.getCenter(), map.getZoom(), { animate:false }); }); }
-	function color(zone) { return zone.level === 'Critical' ? '#d34438' : zone.level === 'High' ? '#d36c36' : zone.level === 'Advisory' ? '#d5a03b' : '#4d9d69'; }
-	function renderSafety(detail) { if (!map || !safetyLayer || !detail?.zone) return; safetyLayer.clearLayers(); const zone = detail.zone; const [latitude, longitude] = zone.coordinates; const radius = zone.level === 'Critical' ? 0.045 : zone.level === 'High' ? 0.032 : 0.022; const outer = radius * 111000; L.circle([latitude, longitude], { radius: outer, color:'#d5a03b', weight:2, dashArray:'3 8', fillColor:'#d5a03b', fillOpacity:.06 }).bindTooltip('<strong>Medium risk buffer</strong><br>Stay alert and avoid entering this outer area.', { sticky:true }).addTo(safetyLayer); L.circle([latitude, longitude], { radius: outer * .58, color:'#d34438', weight:3, dashArray:'5 7', fillColor:'#d34438', fillOpacity:.13 }).bindTooltip('<strong>Highest risk area</strong><br>Evacuate this central zone immediately when instructed.', { sticky:true }).addTo(safetyLayer); const directions = [[latitude + radius * .72, longitude + radius * .62], [latitude - radius * .64, longitude + radius * .72], [latitude - radius * .6, longitude - radius * .72]]; directions.forEach(([targetLat, targetLon]) => { L.polyline([[latitude, longitude], [targetLat, targetLon]], { color:'#d34438', weight:2, dashArray:'6 5', opacity:.9 }).bindTooltip('<strong>Landslide direction</strong><br>Expected movement from the high-risk center.', { sticky:true }).addTo(safetyLayer); const angle = Math.atan2(targetLon - longitude, targetLat - latitude) * 180 / Math.PI; L.marker([targetLat, targetLon], { icon:L.divIcon({ className:'slide-arrow-marker', html:`<span style="transform:rotate(${angle}deg)">&#9654;</span>`, iconSize:[20,20], iconAnchor:[10,10] }) }).bindTooltip('<strong>Landslide direction</strong><br>Expected movement from the high-risk center.', { sticky:true }).addTo(safetyLayer); }); const shelters = [[latitude + radius * .92, longitude - radius * .82], [latitude - radius * .86, longitude - radius * .7]]; shelters.forEach(([shelterLat, shelterLon], index) => { L.circleMarker([shelterLat, shelterLon], { radius:9, color:'#176b48', weight:3, fillColor:'#5fc58e', fillOpacity:.95 }).bindTooltip(`<strong>Safe shelter ${index + 1}</strong><br>Near-zone assembly point. Move here if evacuation is advised.`, { sticky:true }).addTo(safetyLayer); L.marker([shelterLat, shelterLon], { icon:L.divIcon({ className:'shelter-label-marker', html:`<span>SAFE SHELTER ${index + 1}</span>`, iconSize:[100,20], iconAnchor:[0,-13] }) }).addTo(safetyLayer); }); }
-	function render(state) { const selected = state.zones.find(zone => zone.id === state.selectedZoneId) || state.zones[0]; document.getElementById('coordinates').textContent = `${selected.coordinates[0].toFixed(4)}° N, ${selected.coordinates[1].toFixed(4)}° E`; renderLocationSwitcher(state); if (!map) return; zoneLayer.clearLayers(); if (state.exposure && state.exposure.features) L.geoJSON(state.exposure, { style:feature => { const props = feature.properties || {}; const selectedFeature = props.zone_id === state.selectedZoneId; if (props.feature_type === 'zone_boundary') return { color:color(state.zones.find(zone => zone.id === props.zone_id) || selected), weight:selectedFeature ? 2 : 1, dashArray:'5 5', fill:false }; if (props.feature_type === 'probable_impact_area') return { color:color(state.zones.find(zone => zone.id === props.zone_id) || selected), weight:selectedFeature ? 3 : 1, dashArray:'7 6', fillColor:color(state.zones.find(zone => zone.id === props.zone_id) || selected), fillOpacity:selectedFeature ? .14 : .04 }; return {}; }, pointToLayer:(feature, latlng) => L.circleMarker(latlng, { radius:8, color:'#c87422', fillColor:'#f0a33c', fillOpacity:.9, weight:2 }), onEachFeature:(feature, layer) => { const props = feature.properties || {}; if (props.feature_type === 'probable_impact_area') layer.bindTooltip(`<strong>Probable impact area</strong><br>${props.name}<br>Estimated radius: ${props.radius_km} km<br><b>${props.assistance}</b>`, { className:'map-tooltip', sticky:true }); if (props.feature_type === 'hazard_source') layer.bindTooltip(`<strong>Potential landslide source</strong><br>${props.description}`, { className:'map-tooltip', sticky:true }); if (props.feature_type === 'infrastructure') layer.bindTooltip(`<strong>${props.name}</strong><br>${props.type} · ${props.criticality}<br>Status: ${props.status}`, { className:'map-tooltip', sticky:true }); } }).addTo(zoneLayer); state.zones.forEach(zone => { const isSelected = zone.id === state.selectedZoneId; const point = L.circleMarker(zone.coordinates, { radius:isSelected ? 10 : 6, color:color(zone), weight:isSelected ? 3 : 2, fillColor:color(zone), fillOpacity:isSelected ? .9 : .68, bubblingMouseEvents:false }); point.bindTooltip(`<strong>${zone.name}</strong><br>${zone.district}<br><b>${zone.score} / 100 · ${zone.level}</b><br><small>Click to monitor this zone</small>`, { direction:'top', className:'map-tooltip', sticky:true }); point.on('click', () => selectZone(zone.id)); point.addTo(zoneLayer); }); if (activeMode === 'rainfall') state.zones.forEach(zone => L.circle(zone.coordinates, { radius:zone.rainfall * 330, color:'#3e82a1', weight:1, fillColor:'#4e9ab9', fillOpacity:.2, interactive:false }).addTo(zoneLayer)); if (activeMode === 'roads') layers.roads.setOpacity(.9); if (activeMode !== 'roads') layers.roads.setOpacity(.35); if (selected.id !== map._selectedZone) { map.flyTo(selected.coordinates, map.getZoom() < 8 ? 10 : map.getZoom(), { duration:.85, easeLinearity:.15 }); map._selectedZone = selected.id; } }
-	function renderLocationSwitcher(state) { const switcher = document.getElementById('map-location-switcher'); if (!switcher) return; switcher.innerHTML = state.zones.map(zone => `<button class="map-place ${zone.id === state.selectedZoneId ? 'active' : ''}" data-map-zone="${zone.id}"><i class="place-dot" style="background:${color(zone)}"></i><span>${zone.name}</span><b>${zone.score}</b></button>`).join(''); switcher.querySelectorAll('[data-map-zone]').forEach(button => button.addEventListener('click', () => selectZone(button.dataset.mapZone))); }
-	function renderMode(mode) { const label = document.getElementById('active-layer'); if (label) label.textContent = `${mode.toUpperCase()} OVERLAY`; if (!map) return; if (mode === 'terrain') { map.removeLayer(layers.satellite); layers.terrain.addTo(map); } else { map.removeLayer(layers.terrain); layers.satellite.addTo(map); } }
-	return { init, render };
+    let map;
+    let mapElement;
+    let zoneLayer;
+    let assetLayer;
+    let safetyLayer;
+    let exposureLayer;
+    let selectZone;
+    let activeMode = 'risk';
+    let timelineStep = 3;
+    let timelineTimer;
+    let renderedState;
+    const layers = {};
+    const modeLabels = { risk: 'Risk overlay', rainfall: 'Rainfall overlay', terrain: 'Terrain context', exposure: 'Exposure overlay', roads: 'Road network', satellite: 'Satellite context' };
+
+    function init(selectCallback) {
+        selectZone = selectCallback;
+        mapElement = document.getElementById('risk-map');
+        if (!mapElement || !window.L) return;
+        map = L.map(mapElement, { zoomControl: false, attributionControl: true, minZoom: 5, maxZoom: 18, worldCopyJump: false, scrollWheelZoom: true, touchZoom: true, dragging: true, tap: true, zoomAnimation: true, fadeAnimation: true }).setView([26.85, 93.7], 6);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        layers.terrain = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17, attribution: 'OpenTopoMap' });
+        layers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, attribution: 'Esri World Imagery' });
+        layers.roads = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, opacity: .8, attribution: 'OpenStreetMap' });
+        layers.satellite.addTo(map); layers.roads.addTo(map);
+        zoneLayer = L.layerGroup().addTo(map); assetLayer = L.layerGroup().addTo(map); safetyLayer = L.layerGroup().addTo(map); exposureLayer = L.layerGroup().addTo(map);
+        document.querySelectorAll('.map-control').forEach(button => button.addEventListener('click', () => { document.querySelectorAll('.map-control').forEach(item => item.classList.remove('active')); button.classList.add('active'); activeMode = button.dataset.mapMode; renderMode(activeMode); if (renderedState) render(renderedState); }));
+        addMapActions();
+        addTimeline();
+        window.addEventListener('resize', resize);
+    }
+
+    function addTimeline() {
+        const shell = mapElement.closest('.map-shell');
+        if (!shell || shell.querySelector('.map-timeline')) return;
+        const timeline = document.createElement('div');
+        timeline.className = 'map-timeline';
+        timeline.innerHTML = '<div><strong>TIME / HISTORY</strong><small id="timeline-label">Now · live simulation</small></div><button type="button" id="timeline-play" title="Play history">▶</button><input id="timeline-range" type="range" min="0" max="3" step="1" value="3" aria-label="Select map time"><div class="timeline-endpoints"><span>Past 24h</span><span>Now</span></div>';
+        shell.append(timeline);
+        const range = timeline.querySelector('#timeline-range');
+        range.addEventListener('input', event => setTimeline(Number(event.target.value)));
+        timeline.querySelector('#timeline-play').addEventListener('click', () => {
+            if (timelineTimer) { clearInterval(timelineTimer); timelineTimer = null; timeline.querySelector('#timeline-play').textContent = '▶'; return; }
+            timeline.querySelector('#timeline-play').textContent = '❚❚';
+            timelineTimer = setInterval(() => { const next = (timelineStep + 1) % 4; range.value = next; setTimeline(next); }, 1800);
+        });
+    }
+
+    function setTimeline(step) {
+        timelineStep = step;
+        const labels = ['24 hours ago', '12 hours ago', '3 hours ago', 'Now'];
+        const label = document.getElementById('timeline-label');
+        if (label) label.textContent = `${labels[step]} · DEMO HISTORY`;
+        if (!renderedState) return;
+        const target = [42, 57, 71, 92][step];
+        const selected = renderedState.zones.find(zone => zone.id === renderedState.selectedZoneId) || renderedState.zones[0];
+        const current = selected.score || 1;
+        const historical = renderedState.zones.map(zone => ({ ...zone, score: Math.max(0, Math.min(100, Math.round(zone.score + (target - current) * (zone.id === selected.id ? 1 : .35)))), level: undefined }));
+        historical.forEach(zone => { zone.level = zone.score >= 75 ? 'Critical' : zone.score >= 55 ? 'High' : zone.score >= 35 ? 'Advisory' : 'Monitoring'; });
+        render({ ...renderedState, zones: historical });
+    }
+
+    function addMapActions() {
+        const actions = document.createElement('div'); actions.className = 'map-actions'; actions.innerHTML = '<button type="button" data-map-action="recenter" title="Recenter map">◎</button><button type="button" data-map-action="fullscreen" title="Toggle fullscreen">⛶</button>';
+        mapElement.append(actions);
+        actions.querySelector('[data-map-action="recenter"]').addEventListener('click', () => { const selected = renderedState?.zones.find(zone => zone.id === renderedState.selectedZoneId) || renderedState?.zones[0]; if (selected) map.flyTo(selected.coordinates, Math.max(map.getZoom(), 9), { duration: .7 }); else map.setView([26.85, 93.7], 6); });
+        actions.querySelector('[data-map-action="fullscreen"]').addEventListener('click', toggleFullscreen);
+    }
+
+    function toggleFullscreen() { const shell = mapElement.closest('.map-shell'); shell?.classList.toggle('map-fullscreen'); document.body.classList.toggle('map-is-fullscreen', shell?.classList.contains('map-fullscreen')); resize(); }
+    function resize() { if (map) requestAnimationFrame(() => map.invalidateSize({ animate: false, pan: false })); }
+    function color(zone) { return zone.level === 'Critical' ? '#b93432' : zone.level === 'High' ? '#d36c36' : zone.level === 'Advisory' ? '#d5a03b' : '#4d9d69'; }
+    function markerIcon(type, zone) { const labels = { critical: '!', high: '▲', advisory: '•', monitoring: '·', sensor: '⌁', settlement: '⌂', road: '━', infrastructure: '◆' }; return L.divIcon({ className: `gis-marker gis-${type}`, html: `<span>${labels[type] || '•'}</span><b>${zone?.name || type}</b>`, iconSize: [type === 'critical' || type === 'high' ? 92 : 74, 34], iconAnchor: [14, 17] }); }
+    function riskPopup(zone) { const risk = zone.score ?? zone.risk_score ?? 0; return `<div class="gis-popup"><strong>${zone.name}</strong><span class="gis-popup-level" style="color:${color(zone)}">${zone.level || zone.risk_level || 'Monitoring'} · AI score ${risk}/100</span><dl><dt>Current status</dt><dd>${risk >= 75 ? 'Immediate verification recommended' : 'Monitoring active'}</dd><dt>Rainfall</dt><dd>${Number(zone.rainfall ?? zone.rain ?? 0).toFixed(1)} mm/hr</dd><dt>Slope</dt><dd>${zone.slope ?? 'Demo value'}%</dd><dt>Soil moisture</dt><dd>${Math.round(zone.moisture ?? zone.soil_moisture ?? 0)}%</dd><dt>Ground movement</dt><dd>${zone.ground_movement || 'Demo telemetry: stable'}</dd><dt>Population exposed</dt><dd>${zone.population_exposed || `${((zone.exposure || 0) * 150).toLocaleString()} (demo)`}</dd><dt>Road impact</dt><dd>${zone.road_impact || (risk >= 75 ? 'High' : 'Moderate')}</dd><dt>AI confidence</dt><dd>${zone.confidence ?? 'Demo'}%</dd></dl><small>DEMO/MOCK GIS record · Replace with reviewed backend geometry.</small></div>`; }
+    function polygon(zone, radiusKm, options) { return L.circle(zone.coordinates, { radius: radiusKm * 1000, ...options }); }
+
+    function render(state) {
+        renderedState = state; const selected = state.zones.find(zone => zone.id === state.selectedZoneId) || state.zones[0]; if (!selected) return;
+        const coordinates = document.getElementById('coordinates'); if (coordinates) coordinates.textContent = `${selected.coordinates[0].toFixed(4)}° N, ${selected.coordinates[1].toFixed(4)}° E`;
+        renderLocationSwitcher(state); if (!map) return;
+        zoneLayer.clearLayers(); assetLayer.clearLayers(); safetyLayer.clearLayers(); exposureLayer.clearLayers();
+        const showRisk = activeMode === 'risk' || activeMode === 'exposure';
+        state.zones.forEach(zone => {
+            const isSelected = zone.id === selected.id; const riskRadius = zone.level === 'Critical' ? 18 : zone.level === 'High' ? 13 : zone.level === 'Advisory' ? 9 : 6;
+            if (showRisk) { polygon(zone, riskRadius, { color: color(zone), weight: isSelected ? 3 : 1.5, dashArray: isSelected ? '7 6' : '4 7', fillColor: color(zone), fillOpacity: isSelected ? .18 : .08 }).bindPopup(riskPopup(zone)).addTo(zoneLayer); if (isSelected) polygon(zone, riskRadius * .56, { color: '#b93432', weight: 2, dashArray: '3 7', fillColor: '#b93432', fillOpacity: .16 }).bindPopup(riskPopup(zone)).addTo(safetyLayer); }
+            if (activeMode === 'rainfall') polygon(zone, Math.max(2, zone.rainfall * .26), { color: '#3e82a1', weight: 2, dashArray: '5 6', fillColor: '#4e9ab9', fillOpacity: .16 }).addTo(zoneLayer);
+            L.marker(zone.coordinates, { icon: markerIcon((zone.level || 'monitoring').toLowerCase(), zone), zIndexOffset: isSelected ? 500 : 200 }).bindPopup(riskPopup(zone)).on('click', () => selectZone(zone.id)).addTo(zoneLayer);
+        });
+        const showAssets = activeMode === 'exposure' || activeMode === 'roads';
+        if (showAssets) (state.infrastructure || []).forEach((asset, index) => { const zone = state.zones.find(item => item.id === asset.zone_id); if (!zone) return; const point = [zone.coordinates[0] - .01 * (index % 3 + 1), zone.coordinates[1] + .012 * ((index % 2) ? 1 : -1)]; const type = asset.type === 'road' ? 'road' : asset.type === 'village' ? 'settlement' : 'infrastructure'; const roadRisk = type === 'road' && zone.score >= 55; const roadStatus = asset.status || (roadRisk ? (zone.score >= 75 ? 'Blocked' : 'At Risk') : 'Open'); const roadLine = type === 'road' ? L.polyline([zone.coordinates, point], { color: roadRisk ? '#b93432' : '#6d8587', weight: roadRisk ? 5 : 3, dashArray: roadRisk ? '8 6' : '3 7', opacity: .9 }).addTo(assetLayer) : null; if (roadLine) roadLine.bindPopup(`<div class="gis-popup"><strong>${asset.name || 'Important road'}</strong><span>Road · ${roadRisk ? 'High risk' : 'Monitoring'}</span><dl><dt>Road name</dt><dd>${asset.name || 'Demo road'}</dd><dt>Risk level</dt><dd>${zone.level}</dd><dt>Affected length</dt><dd>${asset.affected_length_km || (roadRisk ? '2.4' : '0.0')} km</dd><dt>Status</dt><dd>${roadStatus}</dd><dt>Nearby incident</dt><dd>${zone.name}</dd></dl><small>DEMO/MOCK road impact record</small></div>`); L.marker(point, { icon: markerIcon(type) }).bindPopup(type === 'road' ? `<div class="gis-popup"><strong>${asset.name || 'Important road'}</strong><span>Road · ${zone.level}</span><p>${roadStatus} · ${asset.affected_length_km || (roadRisk ? '2.4' : '0.0')} km affected · Nearby: ${zone.name}</p><small>DEMO/MOCK road impact record</small></div>` : `<div class="gis-popup"><strong>${asset.name || type}</strong><span>${asset.type || 'Infrastructure'} · ${asset.criticality || 'Operational'}</span><p>Status: ${asset.status || 'DEMO/MOCK'}</p></div>`).addTo(assetLayer); });
+        if (showAssets) (state.sensors || []).forEach(sensor => { const zone = state.zones.find(item => item.id === sensor.zone_id); if (!zone) return; L.marker([zone.coordinates[0] + .006, zone.coordinates[1] + .006], { icon: markerIcon('sensor') }).bindPopup(`<div class="gis-popup"><strong>${sensor.id || 'Sensor station'}</strong><span>Sensor station · ${sensor.status || 'DEMO/MOCK'}</span><dl><dt>Rainfall</dt><dd>${Number(sensor.rainfall || 0).toFixed(1)} mm/hr</dd><dt>Soil moisture</dt><dd>${Math.round(sensor.soil_moisture || 0)}%</dd><dt>Temperature</dt><dd>${Number(sensor.temperature || 0).toFixed(1)} °C</dd></dl></div>`).addTo(assetLayer); });
+        if (activeMode === 'exposure' && state.exposure?.features) L.geoJSON(state.exposure, { style: () => ({ color: '#c87422', weight: 2, dashArray: '4 6', fillColor: '#f0a33c', fillOpacity: .1 }), pointToLayer: (_, latlng) => L.circleMarker(latlng, { radius: 7, color: '#c87422', fillColor: '#f0a33c', fillOpacity: .9, weight: 2 }) }).addTo(exposureLayer);
+        if (selected.id !== map._selectedZone) { map.flyTo(selected.coordinates, Math.max(map.getZoom(), 8), { duration: .7 }); map._selectedZone = selected.id; }
+        renderMode(activeMode);
+    }
+
+    function renderLocationSwitcher(state) { const switcher = document.getElementById('map-location-switcher'); if (!switcher) return; switcher.innerHTML = state.zones.map(zone => `<button class="map-place ${zone.id === state.selectedZoneId ? 'active' : ''}" data-map-zone="${zone.id}"><i class="place-dot" style="background:${color(zone)}"></i><span>${zone.name}</span><b>${zone.score}</b></button>`).join(''); switcher.querySelectorAll('[data-map-zone]').forEach(button => button.addEventListener('click', () => selectZone(button.dataset.mapZone))); }
+    function renderMode(mode) { const label = document.getElementById('active-layer'); if (label) label.textContent = (modeLabels[mode] || mode).toUpperCase(); const legend = document.querySelector('.map-legend'); if (legend) { legend.dataset.activeLayer = mode; legend.innerHTML = mode === 'rainfall' ? '<span><i class="legend-dot rainfall-low"></i> Low rainfall</span><span><i class="legend-dot rainfall-medium"></i> Moderate rainfall</span><span><i class="legend-dot rainfall-high"></i> High rainfall</span><span><i class="legend-ring"></i> Intensity radius</span>' : mode === 'exposure' ? '<span><i class="legend-dot settlement"></i> Settlement</span><span><i class="legend-dot asset"></i> Critical asset</span><span><i class="legend-dot hotspot"></i> Exposed population</span><span><i class="legend-ring"></i> Impact area</span>' : mode === 'roads' ? '<span><i class="legend-dot road-open"></i> Open</span><span><i class="legend-dot road-monitor"></i> Monitor</span><span><i class="legend-dot critical"></i> At risk / blocked</span><span><i class="legend-line"></i> Affected road</span>' : '<span><i class="legend-dot critical"></i> Critical 80–100</span><span><i class="legend-dot high"></i> High 60–79</span><span><i class="legend-dot advisory"></i> Advisory 40–59</span><span><i class="legend-dot monitoring"></i> Monitoring 0–39</span><span><i class="legend-ring"></i> Risk zone</span>'; } if (!map) return; [layers.terrain, layers.satellite, layers.roads].forEach(layer => { if (map.hasLayer(layer)) map.removeLayer(layer); }); if (mode === 'terrain') layers.terrain.addTo(map); else if (mode !== 'roads') layers.satellite.addTo(map); if (mode === 'roads' || mode === 'risk' || mode === 'rainfall' || mode === 'exposure') layers.roads.addTo(map); if (zoneLayer) zoneLayer.bringToFront(); if (assetLayer) assetLayer.bringToFront(); }
+    return { init, render };
 })();

@@ -1,0 +1,165 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- 1. BACKGROUND CIRCULAR BADGE (Deep Midnight Blue) -->
+    <path
+        android:fillColor="#081E3D"
+        android:pathData="M256,40 A216,216 0 1,1 255.9,40 Z" />
+
+    <!-- 2. OUTER METALLIC "B" FRAME (Silver Base) -->
+    <path
+        android:fillColor="#94A3B8"
+        android:fillType="evenOdd"
+        android:pathData="
+            M145,80
+            H280
+            C345,80 395,115 395,178
+            C395,218 368,245 328,256
+            C378,268 405,302 405,350
+            C405,418 350,432 280,432
+            H145
+            Z
+            M185,116
+            V396
+            H275
+            C325,396 365,380 365,344
+            C365,308 328,284 275,284
+            H230
+            L205,256
+            L230,228
+            H275
+            C320,228 355,206 355,172
+            C355,138 320,116 275,116
+            Z" />
+
+    <!-- 3. INNER FRAME HIGHLIGHT (Polished Chrome / White Bevel) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="
+            M155,90
+            H280
+            C338,90 385,122 385,178
+            C385,214 360,240 320,256
+            C368,268 395,300 395,348
+            C395,408 342,422 280,422
+            H155
+            V90 Z" />
+
+    <!-- 4. INNER CAVITY / CORE ENCLOSURE (Dark Navy Recesses) -->
+    <!-- Top Cavity -->
+    <path
+        android:fillColor="#0A192F"
+        android:pathData="
+            M230,126
+            H275
+            C315,126 345,142 345,172
+            C345,202 315,218 275,218
+            H230
+            Z" />
+    <path
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="4"
+        android:fillColor="#00000000"
+        android:pathData="
+            M230,126
+            H275
+            C315,126 345,142 345,172
+            C345,202 315,218 275,218
+            H230
+            Z" />
+
+    <!-- Bottom Cavity -->
+    <path
+        android:fillColor="#0A192F"
+        android:pathData="
+            M230,294
+            H275
+            C320,294 355,312 355,344
+            C355,376 320,386 275,386
+            H230
+            Z" />
+    <path
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="4"
+        android:fillColor="#00000000"
+        android:pathData="
+            M230,294
+            H275
+            C320,294 355,312 355,344
+            C355,376 320,386 275,386
+            H230
+            Z" />
+
+    <!-- 5. SILVER PCB CIRCUIT TRACES & NODES (Spine Area) -->
+    <!-- Silver Trace Lines -->
+    <path
+        android:strokeColor="#E2E8F0"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="
+            M168,138 H198 V220
+            M168,185 H214 V138
+            M168,272 H214 V350
+            M168,328 H198 V370
+            M198,220 L220,242
+            M198,290 L220,270" />
+
+    <!-- Silver Terminal Nodes (Circles) -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="
+            M168,138 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M168,185 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M214,138 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M168,272 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M168,328 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M198,370 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0" />
+
+    <!-- 6. ELECTRIC CYAN DATA TRACKS & GLOWING NODES (Outer Lobes) -->
+    <!-- Upper Lobe Cyan Circuit Tracks -->
+    <path
+        android:strokeColor="#00D2FE"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="
+            M240,146 H270 C305,146 325,158 325,174
+            M250,166 H272 C295,166 308,172 308,184
+            M238,200 H265 L292,200" />
+
+    <!-- Lower Lobe Cyan Circuit Tracks -->
+    <path
+        android:strokeColor="#00D2FE"
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="
+            M240,314 H272 C308,314 335,326 335,346 C335,362 312,368 274,368
+            M252,336 H274 C296,336 312,342 312,352
+            M238,256 L268,256 H295" />
+
+    <!-- Cyan Terminal Nodes (Circles) -->
+    <path
+        android:fillColor="#00D2FE"
+        android:pathData="
+            M240,146 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M325,174 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M250,166 m-4.5,0 a4.5,4.5 0 1,1 9,0 a4.5,4.5 0 1,1 -9,0
+            M292,200 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M295,256 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M240,314 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M274,368 m-5,0 a5,5 0 1,1 10,0 a5,5 0 1,1 -10,0
+            M312,352 m-4.5,0 a4.5,4.5 0 1,1 9,0 a4.5,4.5 0 1,1 -9,0" />
+
+</vector>

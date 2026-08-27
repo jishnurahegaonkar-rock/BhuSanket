@@ -1,0 +1,101 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+
+    <!-- 1. TOP ACCENT WEDGE (Dark Navy Cutout on Stem) -->
+    <path
+        android:fillColor="#0B2742"
+        android:pathData="M120,126 L174,126 L174,152 Z" />
+
+    <!-- 2. MAIN 'b' BODY (Vibrant Cyan Stem & Circular Counter) -->
+    <path
+        android:fillColor="#00B2FE"
+        android:fillType="evenOdd"
+        android:pathData="
+            M120,148
+            L174,166
+            L174,250
+            C195,225 230,215 270,215
+            C332,215 380,263 380,325
+            C380,387 332,435 270,435
+            C230,435 195,420 174,395
+            L174,435
+            L120,435
+            Z
+            M270,269
+            C301,269 326,294 326,325
+            C326,356 301,381 270,381
+            C239,381 214,356 214,325
+            C214,294 239,269 270,269
+            Z" />
+
+    <!-- 3. CIRCUIT & DATA TRACE CONNECTORS -->
+    <!-- Diagonal Navy Line to Upper-Right Node -->
+    <path
+        android:strokeColor="#0B2742"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M290,240 L345,188" />
+
+    <!-- Cyan Connecting Line (Left Branch) -->
+    <path
+        android:strokeColor="#00B2FE"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M275,190 L308,154" />
+
+    <!-- Cyan Connecting Line (Far-Right Branch) -->
+    <path
+        android:strokeColor="#00B2FE"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M394,248 L428,222" />
+
+    <!-- 4. NETWORK NODES / DATA PIXELS (Dark Navy) -->
+    <!-- Central Large Overlapping Anchor Block -->
+    <path
+        android:fillColor="#0B2742"
+        android:pathData="M260,230 h52 v52 h-52 z" />
+
+    <!-- Mid Upper-Right Block -->
+    <path
+        android:fillColor="#0B2742"
+        android:pathData="M340,168 h36 v36 h-36 z" />
+
+    <!-- Far Upper-Right Block -->
+    <path
+        android:fillColor="#0B2742"
+        android:pathData="M385,134 h26 v26 h-26 z" />
+
+    <!-- 5. NETWORK NODES / DATA PIXELS (Vibrant Cyan) -->
+    <!-- Top-Left Mid Block -->
+    <path
+        android:fillColor="#00B2FE"
+        android:pathData="M254,174 h34 v34 h-34 z" />
+
+    <!-- Top-Left Small Block -->
+    <path
+        android:fillColor="#00B2FE"
+        android:pathData="M304,138 h22 v22 h-22 z" />
+
+    <!-- Lower-Right Main Block -->
+    <path
+        android:fillColor="#00B2FE"
+        android:pathData="M350,256 h44 v44 h-44 z" />
+
+    <!-- Lower-Right Mid Block -->
+    <path
+        android:fillColor="#00B2FE"
+        android:pathData="M398,258 h20 v20 h-20 z" />
+
+    <!-- Far Lower-Right Node -->
+    <path
+        android:fillColor="#00B2FE"
+        android:pathData="M428,238 h14 v14 h-14 z" />
+
+</vector>
