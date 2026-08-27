@@ -9,23 +9,23 @@
 9        android:targetSdkVersion="35" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:2:5-67
-11-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:2:22-64
+11-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:2:5-67
+11-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:2:22-64
 12    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-12-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:3:5-77
-12-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:3:22-74
+12-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:3:5-77
+12-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:3:22-74
 13    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-13-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:4:5-81
-13-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:4:22-78
+13-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:4:5-81
+13-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:4:22-78
 14    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-14-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:5:5-81
-14-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:5:22-78
+14-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:5:5-81
+14-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:5:22-78
 15    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-15-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:6:5-79
-15-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:6:22-76
+15-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:6:5-79
+15-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:6:22-76
 16    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-16-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:8:5-81
-16-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:8:22-78
+16-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:8:5-81
+16-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:8:22-78
 17
 18    <permission
 18-->[androidx.core:core:1.16.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/3e21e3b9da5a649ce96f93c32671448c/transformed/core-1.16.0/AndroidManifest.xml:22:5-24:47
@@ -73,36 +73,36 @@
 40-->[org.osmdroid:osmdroid-android:6.1.20] /Users/samruddhi/.gradle/caches/9.0.0/transforms/dcb349337ac6d8dd3b98aeae65a4fb5b/transformed/osmdroid-android-6.1.20/AndroidManifest.xml:25:9-33
 41
 42    <application
-42-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
+42-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
 43        android:allowBackup="true"
-43-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:11:9-35
+43-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:11:9-35
 44        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 44-->[androidx.core:core:1.16.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/3e21e3b9da5a649ce96f93c32671448c/transformed/core-1.16.0/AndroidManifest.xml:28:18-86
 45        android:debuggable="true"
 46        android:extractNativeLibs="false"
 47        android:icon="@drawable/ic_bhusanket"
-47-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:12:9-46
+47-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:12:9-46
 48        android:label="BhuSanket"
-48-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:14:9-34
+48-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:14:9-34
 49        android:roundIcon="@drawable/ic_bhusanket"
-49-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:13:9-51
+49-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:13:9-51
 50        android:theme="@style/Theme.BhuSanket" >
-50-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:15:9-47
+50-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:15:9-47
 51        <activity
-51-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:16:9-23:20
+51-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:16:9-23:20
 52            android:name="com.bhusanket.app.MainActivity"
-52-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:17:13-41
+52-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:17:13-41
 53            android:exported="true" >
-53-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:18:13-36
+53-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:18:13-36
 54            <intent-filter>
-54-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:19:13-22:29
+54-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:19:13-22:29
 55                <action android:name="android.intent.action.MAIN" />
-55-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:20:17-69
-55-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:20:25-66
+55-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:20:17-69
+55-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:20:25-66
 56
 57                <category android:name="android.intent.category.LAUNCHER" />
-57-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:21:17-77
-57-->/Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:21:27-74
+57-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:21:17-77
+57-->/Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:21:27-74
 58            </intent-filter>
 59        </activity>
 60        <activity
