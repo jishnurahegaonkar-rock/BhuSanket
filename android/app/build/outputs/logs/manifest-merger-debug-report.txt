@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:1:1-25:12
 MERGED from [androidx.compose.material3:material3-android:1.3.2] /Users/samruddhi/.gradle/caches/9.0.0/transforms/49f12b333db4a135bb02bf17a1ca9247/transformed/material3-release/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.material:material-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/1b1b2c808533512c921c97b52ad1bf57/transformed/material/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.animation:animation-core-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/879b39ec36624e151c887d0805e27328/transformed/animation-core/AndroidManifest.xml:2:1-7:12
@@ -56,40 +56,40 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/samr
 MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/278627d1eb8cebc6e683697bb3012230/transformed/core-runtime-2.2.0/AndroidManifest.xml:17:1-22:12
 MERGED from [org.osmdroid:osmdroid-android:6.1.20] /Users/samruddhi/.gradle/caches/9.0.0/transforms/dcb349337ac6d8dd3b98aeae65a4fb5b/transformed/osmdroid-android-6.1.20/AndroidManifest.xml:2:1-27:12
 	package
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 	android:versionName
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 	android:versionCode
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 	xmlns:android
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:1:11-69
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:1:11-69
 uses-permission#android.permission.INTERNET
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:2:5-67
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:2:5-67
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:2:22-64
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:2:22-64
 uses-permission#android.permission.POST_NOTIFICATIONS
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:3:5-77
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:3:5-77
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:3:22-74
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:3:22-74
 uses-permission#android.permission.USE_FULL_SCREEN_INTENT
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:4:5-81
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:4:5-81
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:4:22-78
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:4:22-78
 uses-permission#android.permission.ACCESS_COARSE_LOCATION
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:5:5-81
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:5:5-81
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:5:22-78
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:5:22-78
 uses-permission#android.permission.ACCESS_FINE_LOCATION
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:6:5-79
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:6:5-79
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:6:22-76
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:6:22-76
 uses-permission#android.permission.WRITE_EXTERNAL_STORAGE
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:8:5-81
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:8:5-81
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:8:22-78
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:8:22-78
 application
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:10:5-24:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/9ab5436262c9c48eeb6c72770047d8ac/transformed/ui-tooling/AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.compose.ui:ui-tooling-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/9ab5436262c9c48eeb6c72770047d8ac/transformed/ui-tooling/AndroidManifest.xml:22:5-26:19
 MERGED from [androidx.emoji2:emoji2:1.4.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/6de78fe60960fbd8c47c9b774d6ff599/transformed/emoji2-1.4.0/AndroidManifest.xml:23:5-33:19
@@ -105,39 +105,39 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] /Users/samruddhi/.gradle/ca
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/samruddhi/.gradle/caches/9.0.0/transforms/2eeb5c87870e0f0deb0c81f73d315db0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
 MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /Users/samruddhi/.gradle/caches/9.0.0/transforms/2eeb5c87870e0f0deb0c81f73d315db0/transformed/versionedparcelable-1.1.1/AndroidManifest.xml:24:5-25:19
 	android:extractNativeLibs
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.16.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/3e21e3b9da5a649ce96f93c32671448c/transformed/core-1.16.0/AndroidManifest.xml:28:18-86
 	android:label
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:14:9-34
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:14:9-34
 	android:roundIcon
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:13:9-51
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:13:9-51
 	android:icon
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:12:9-46
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:12:9-46
 	android:allowBackup
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:11:9-35
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:11:9-35
 	android:theme
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:15:9-47
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:15:9-47
 activity#com.bhusanket.app.MainActivity
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:16:9-23:20
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:16:9-23:20
 	android:exported
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:18:13-36
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:18:13-36
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:17:13-41
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:17:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:19:13-22:29
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:19:13-22:29
 action#android.intent.action.MAIN
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:20:17-69
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:20:17-69
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:20:25-66
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:20:25-66
 category#android.intent.category.LAUNCHER
-ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:21:17-77
+ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:21:17-77
 	android:name
-		ADDED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml:21:27-74
+		ADDED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml:21:27-74
 uses-sdk
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
-INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
+INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 MERGED from [androidx.compose.material3:material3-android:1.3.2] /Users/samruddhi/.gradle/caches/9.0.0/transforms/49f12b333db4a135bb02bf17a1ca9247/transformed/material3-release/AndroidManifest.xml:20:5-44
 MERGED from [androidx.compose.material3:material3-android:1.3.2] /Users/samruddhi/.gradle/caches/9.0.0/transforms/49f12b333db4a135bb02bf17a1ca9247/transformed/material3-release/AndroidManifest.xml:20:5-44
 MERGED from [androidx.compose.material:material-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/1b1b2c808533512c921c97b52ad1bf57/transformed/material/AndroidManifest.xml:5:5-44
@@ -241,9 +241,9 @@ MERGED from [androidx.arch.core:core-runtime:2.2.0] /Users/samruddhi/.gradle/cac
 MERGED from [org.osmdroid:osmdroid-android:6.1.20] /Users/samruddhi/.gradle/caches/9.0.0/transforms/dcb349337ac6d8dd3b98aeae65a4fb5b/transformed/osmdroid-android-6.1.20/AndroidManifest.xml:5:5-7:41
 MERGED from [org.osmdroid:osmdroid-android:6.1.20] /Users/samruddhi/.gradle/caches/9.0.0/transforms/dcb349337ac6d8dd3b98aeae65a4fb5b/transformed/osmdroid-android-6.1.20/AndroidManifest.xml:5:5-7:41
 	android:targetSdkVersion
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 	android:minSdkVersion
-		INJECTED from /Users/samruddhi/Desktop/BhuSanket/android/app/src/main/AndroidManifest.xml
+		INJECTED from /Users/samruddhi/Desktop/BhuSanket/BhuSanket/android/app/src/main/AndroidManifest.xml
 activity#androidx.compose.ui.tooling.PreviewActivity
 ADDED from [androidx.compose.ui:ui-tooling-android:1.9.0] /Users/samruddhi/.gradle/caches/9.0.0/transforms/9ab5436262c9c48eeb6c72770047d8ac/transformed/ui-tooling/AndroidManifest.xml:23:9-25:39
 	android:exported

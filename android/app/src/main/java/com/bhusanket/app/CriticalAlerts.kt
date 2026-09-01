@@ -6,6 +6,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
@@ -21,6 +23,13 @@ internal object CriticalAlerts {
         ).apply {
             description = "Immediate evacuation warnings for critical monitored zones"
             enableVibration(true)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
         }
         context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
@@ -43,6 +52,7 @@ internal object CriticalAlerts {
             .setStyle(NotificationCompat.BigTextStyle().bigText("$name: risk score $score. Leave steep slopes and river channels. Ambulance ETA 08 min · Ground response ETA 12 min."))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
             .setAutoCancel(true)
             .setOngoing(true)
             .setFullScreenIntent(pendingIntent, true)

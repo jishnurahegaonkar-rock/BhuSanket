@@ -1,7 +1,6 @@
 package com.bhusanket.app
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Dashboard
@@ -36,6 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,19 +45,21 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.viewinterop.AndroidView
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
-import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.BoundingBox
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
+import org.osmdroid.views.overlay.Polyline
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,72 +97,85 @@ private enum class Screen { Situation, Map, Intelligence, Alerts, Notifications,
 
 @Composable fun BhuSanketApp(forceWarning: Boolean = false) {
     var screen by remember { mutableStateOf(Screen.Situation) }; var selectedId by remember { mutableStateOf("tawang") }; var scenario by remember { mutableStateOf("Normal") }
-    var warningAcknowledged by remember { mutableStateOf(false) }
+    var historyStep by remember { mutableStateOf(3) }; var historyPlaying by remember { mutableStateOf(false) }
+    var warningAcknowledged by remember { mutableStateOf(false) }; var selectionNonce by remember { mutableStateOf(0) }
     var liveData by remember { mutableStateOf(zoneData) }
     var notificationPayload by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) { BhuSanketApi.loadZones()?.let { liveData = it } }
     LaunchedEffect(Unit) { notificationPayload = BhuSanketApi.loadNotifications() }
-    val zones = liveData.map { it.copy(score = ((if (it.id == "tawang") maxOf(it.score, 92) else it.score) + when (scenario) { "Heavy Rain" -> 12; "Extreme Rain" -> 24; "Recovery" -> -8; else -> 0 }).coerceIn(0, 100)) }
-    val selected = zones.first { it.id == selectedId }
+    LaunchedEffect(historyPlaying) { while (historyPlaying) { kotlinx.coroutines.delay(1800); historyStep = (historyStep + 1) % 4 } }
+    val scenarioBoost = when (scenario) { "Heavy Rain" -> 12; "Extreme Rain" -> 24; "Recovery" -> -8; else -> 0 }
+    val historyOffset = when (historyStep) { 0 -> -12; 1 -> -7; 2 -> -3; else -> 0 }
+    val zones = liveData.map { base ->
+        val score = ((if (base.id == "tawang") maxOf(base.score, 92) else base.score) + scenarioBoost + historyOffset).coerceIn(0, 100)
+        base.copy(score = score, rain = (base.rain + scenarioBoost * .65 + historyOffset * .2).coerceAtLeast(0.0), moisture = (base.moisture + scenarioBoost / 3 + historyOffset / 3).coerceIn(0, 100), totalRain = (base.totalRain + scenarioBoost * 2 + historyOffset).coerceAtLeast(0))
+    }
+    val selected = zones.firstOrNull { it.id == selectedId } ?: zones.first()
     val context = LocalContext.current
-    LaunchedEffect(selected.id, selected.score) { warningAcknowledged = false; if (selected.score >= 90) CriticalAlerts.notify(context, selected.name, selected.score) }
-    MaterialTheme(colorScheme = androidx.compose.material3.lightColorScheme(primary = Orange, background = Paper)) { Scaffold(containerColor = Paper, topBar = { TopDeck { scenario = "Normal" } }, bottomBar = { Navigation(screen) { screen = it } }) { inset -> Box(Modifier.fillMaxSize().padding(inset)) { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(14.dp)) { when (screen) { Screen.Situation -> Dashboard(zones, selected, selectedId, scenario, { selectedId = it }, { scenario = it }); Screen.Map -> DedicatedMapScreen(zones, selectedId, scenario, { selectedId = it }, { scenario = it }); else -> Directory(screen, zones, selected, notificationPayload) { selectedId = it } } }; if ((forceWarning || selected.score >= 90) && !warningAcknowledged) CriticalWarning(selected) { warningAcknowledged = true } } } }
+    LaunchedEffect(selectionNonce) { if (selectionNonce > 0) { warningAcknowledged = false; if (selected.score >= 90) CriticalAlerts.notify(context, selected.name, selected.score) } }
+    val selectZone: (String) -> Unit = { id -> selectedId = id; selectionNonce++ }
+    MaterialTheme(colorScheme = androidx.compose.material3.lightColorScheme(primary = Orange, background = Paper)) { Scaffold(containerColor = Paper, topBar = { TopDeck { scenario = "Normal"; historyStep = 3; historyPlaying = false } }, bottomBar = { Navigation(screen) { screen = it } }) { inset -> Box(Modifier.fillMaxSize().padding(inset)) { Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(14.dp)) { when (screen) { Screen.Situation -> Dashboard(zones, selected, selected.id, scenario, selectZone, { scenario = it }, { screen = Screen.Map }); Screen.Map -> DedicatedMapScreen(zones, selected.id, scenario, selectZone, { scenario = it }, historyStep, { historyStep = it }, historyPlaying, { historyPlaying = !historyPlaying }); else -> Directory(screen, zones, selected, notificationPayload, selectZone) } }; if ((forceWarning || (selectionNonce > 0 && selected.score >= 90)) && !warningAcknowledged) CriticalWarning(selected) { warningAcknowledged = true } } } }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable private fun TopDeck(reset: () -> Unit) { TopAppBar(colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink, titleContentColor = Color.White), title = { Column { Text("BHUSANKET", fontWeight = FontWeight.Bold, letterSpacing = 2.sp); Text("LANDSLIDE INTELLIGENCE NETWORK", fontSize = 9.sp, color = Color(0xFFB5C2BF)) } }, actions = { Column(horizontalAlignment = Alignment.End) { Text("● REGIONAL WATCH", color = Color(0xFF72D3B1), fontSize = 10.sp); Text("OPERATIONAL", color = Color(0xFFB5C2BF), fontSize = 9.sp) }; IconButton(onClick = reset) { Icon(Icons.Default.Refresh, "Reset simulation", tint = Color.White) } }) }
 @Composable private fun Navigation(current: Screen, select: (Screen) -> Unit) { NavigationBar(containerColor = Ink) { listOf(Screen.Situation to Icons.Default.Dashboard, Screen.Map to Icons.Default.Map, Screen.Alerts to Icons.Default.Campaign, Screen.Notifications to Icons.Default.Notifications, Screen.Reports to Icons.Default.Report).forEach { (item, icon) -> NavigationBarItem(selected = current == item, onClick = { select(item) }, icon = { Icon(icon, item.name) }, label = { Text(item.name, fontSize = 8.sp) }) } } }
-@Composable private fun Dashboard(zones: List<Zone>, selected: Zone, selectedId: String, scenario: String, select: (String) -> Unit, simulate: (String) -> Unit) { Text("SITUATION ROOM / LIVE OPERATIONS", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold); Text("What is happening right now?", color = Ink, fontSize = 27.sp, fontWeight = FontWeight.Bold); Text("BhuSanket watches environmental conditions across priority landslide zones and turns change into action.", color = Muted, fontSize = 13.sp); Spacer(Modifier.height(14.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { Stat("REGIONAL RISK", zones.map { it.score }.average().toInt().toString(), "/ 100", Modifier.weight(1f)); Stat("ACTIVE ALERTS", zones.count { it.score >= 55 }.toString().padStart(2, '0'), "needs action", Modifier.weight(1f)); Stat("PRIORITY", zones.maxBy { it.score }.name.substringBefore(' '), "verify now", Modifier.weight(1f)) }; Spacer(Modifier.height(12.dp)); MapSummary(selected); Spacer(Modifier.height(12.dp)); SimulationDashboard(scenario, simulate); Spacer(Modifier.height(12.dp)); Incident(selected); Spacer(Modifier.height(12.dp)); Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Telemetry(selected); Exposure(selected); RiskOutlook(selected); SystemStatus(); RiskChart(zones) }; Spacer(Modifier.height(12.dp)); Priority(zones) }
+@Composable private fun Dashboard(zones: List<Zone>, selected: Zone, selectedId: String, scenario: String, select: (String) -> Unit, simulate: (String) -> Unit, openMap: () -> Unit) { Text("SITUATION ROOM / LIVE OPERATIONS", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold); Text("What is happening right now?", color = Ink, fontSize = 27.sp, fontWeight = FontWeight.Bold); Text("BhuSanket watches environmental conditions across priority landslide zones and turns change into action.", color = Muted, fontSize = 13.sp); Spacer(Modifier.height(14.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) { Stat("REGIONAL RISK", zones.map { it.score }.average().toInt().toString(), "/ 100", Modifier.weight(1f)); Stat("ACTIVE ALERTS", zones.count { it.score >= 55 }.toString().padStart(2, '0'), "needs action", Modifier.weight(1f)); Stat("PRIORITY", zones.maxBy { it.score }.name.substringBefore(' '), "verify now", Modifier.weight(1f)) }; Spacer(Modifier.height(12.dp)); MapSummary(selected, openMap); Spacer(Modifier.height(12.dp)); SimulationDashboard(scenario, simulate); Spacer(Modifier.height(12.dp)); Incident(selected); Spacer(Modifier.height(12.dp)); Column(verticalArrangement = Arrangement.spacedBy(10.dp)) { Telemetry(selected); Exposure(selected); RiskOutlook(selected); SystemStatus(); RiskChart(zones) }; Spacer(Modifier.height(12.dp)); Priority(zones) }
 
-@Composable private fun MapSummary(selected: Zone) { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFE1EAE3)), shape = RoundedCornerShape(6.dp)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(54.dp).clip(CircleShape).background(color(selected.level)), contentAlignment = Alignment.Center) { Text(selected.score.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) }; Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text("GEOSPATIAL SITUATION", color = Orange, fontSize = 9.sp, fontWeight = FontWeight.Bold); Text("${selected.name} monitoring map", color = Ink, fontWeight = FontWeight.Bold, fontSize = 17.sp); Text("Open the dedicated Map tab for layers, shelters, and impact zones.", color = Muted, fontSize = 11.sp) }; Icon(Icons.Default.Map, "Map workspace", tint = Orange) } } }
+@Composable private fun MapSummary(selected: Zone, openMap: () -> Unit) { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFE1EAE3)), shape = RoundedCornerShape(6.dp)) { Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(54.dp).clip(CircleShape).background(color(selected.level)), contentAlignment = Alignment.Center) { Text(selected.score.toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp) }; Spacer(Modifier.width(14.dp)); Column(Modifier.weight(1f)) { Text("GEOSPATIAL SITUATION", color = Orange, fontSize = 9.sp, fontWeight = FontWeight.Bold); Text("${selected.name} monitoring map", color = Ink, fontWeight = FontWeight.Bold, fontSize = 17.sp); Text("Open the dedicated map for layers, shelters, and impact zones.", color = Muted, fontSize = 11.sp); OutlinedButton(onClick = openMap, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 2.dp)) { Icon(Icons.Default.Map, null, Modifier.size(16.dp)); Spacer(Modifier.width(5.dp)); Text("View map", fontSize = 11.sp) } } } } }
 
 @Composable private fun RiskChart(zones: List<Zone>) { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(6.dp)) { Column(Modifier.padding(14.dp)) { Text("REGIONAL RISK PROFILE", color = Orange, fontSize = 9.sp, fontWeight = FontWeight.Bold); Text("Live zone comparison", color = Ink, fontSize = 18.sp, fontWeight = FontWeight.Bold); Row(Modifier.fillMaxWidth().height(140.dp).padding(top = 12.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceEvenly) { zones.forEach { zone -> Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) { Box(Modifier.height((zone.score.coerceAtLeast(8) * 1.05f).dp).width(12.dp).background(color(zone.level), RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp))); Text(zone.name.substringBefore(' '), color = Muted, fontSize = 7.sp, maxLines = 1); Text(zone.score.toString(), color = Ink, fontSize = 8.sp, fontWeight = FontWeight.Bold) } } } } } }
 
-@Composable private fun DedicatedMapScreen(zones: List<Zone>, selectedId: String, scenario: String, select: (String) -> Unit, simulate: (String) -> Unit) { Text("GEOSPATIAL COMMAND / MAP WORKSPACE", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold); Text("Map workspace", color = Ink, fontSize = 29.sp, fontWeight = FontWeight.Bold); Text("A focused map for place selection, risk layers, shelters, and response planning.", color = Muted, fontSize = 13.sp); Spacer(Modifier.height(12.dp)); MapCard(zones, selectedId, scenario, select, dedicated = true); Spacer(Modifier.height(12.dp)); MapLegend(); Spacer(Modifier.height(12.dp)); SimulationDashboard(scenario, simulate) }
+@Composable private fun DedicatedMapScreen(zones: List<Zone>, selectedId: String, scenario: String, select: (String) -> Unit, simulate: (String) -> Unit, historyStep: Int, setHistoryStep: (Int) -> Unit, historyPlaying: Boolean, toggleHistory: () -> Unit) { Text("GEOSPATIAL COMMAND / MAP WORKSPACE", color = Orange, fontSize = 11.sp, fontWeight = FontWeight.Bold); Text("Map workspace", color = Ink, fontSize = 29.sp, fontWeight = FontWeight.Bold); Text("A focused map for place selection, risk layers, shelters, and response planning.", color = Muted, fontSize = 13.sp); Spacer(Modifier.height(12.dp)); MapCard(zones, selectedId, scenario, select, dedicated = true); Spacer(Modifier.height(12.dp)); HistoryControls(historyStep, setHistoryStep, historyPlaying, toggleHistory); Spacer(Modifier.height(12.dp)); MapLegend(); Spacer(Modifier.height(12.dp)); SimulationDashboard(scenario, simulate) }
+
+@Composable private fun HistoryControls(step: Int, setStep: (Int) -> Unit, playing: Boolean, toggle: () -> Unit) { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(4.dp)) { Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("TIME / HISTORY", color = Orange, fontSize = 9.sp, fontWeight = FontWeight.Bold); Text(listOf("24 hours ago", "12 hours ago", "3 hours ago", "Now")[step], color = Ink, fontWeight = FontWeight.Bold) }; Button(onClick = toggle, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp, vertical = 2.dp)) { Text(if (playing) "Pause" else "Play") } }; Slider(value = step.toFloat(), onValueChange = { setStep(it.toInt()) }, valueRange = 0f..3f, steps = 2, enabled = !playing); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Past 24h", color = Muted, fontSize = 9.sp); Text("Now", color = Muted, fontSize = 9.sp) } } } }
 
 @Composable private fun MapLegend() { Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(6.dp)) { Column(Modifier.padding(14.dp)) { Text("MAP KEY / IMPACT SCALE", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { listOf("Critical" to Red, "High" to Orange, "Advisory" to Amber, "Monitoring" to Green).forEach { (label, tint) -> Row(verticalAlignment = Alignment.CenterVertically) { Box(Modifier.size(10.dp).clip(CircleShape).background(tint)); Spacer(Modifier.width(5.dp)); Text(label, color = Muted, fontSize = 9.sp) } } } } } }
 
 @Composable private fun PlacePicker(zones: List<Zone>, selectedId: String, select: (String) -> Unit) { var expanded by remember { mutableStateOf(false) }; val selected = zones.first { it.id == selectedId }; Column { Text("JUMP TO MONITORED PLACE", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold); Box { Button(onClick = { expanded = true }, colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Ink)) { Text(selected.name); Text("  ▾", color = Orange) }; DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) { zones.forEach { zone -> DropdownMenuItem(text = { Text("${zone.name}  ·  ${zone.score}") }, onClick = { select(zone.id); expanded = false }) } } } } }
 @Composable private fun Stat(label: String, value: String, detail: String, modifier: Modifier = Modifier) { Card(modifier, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(3.dp)) { Column(Modifier.padding(10.dp)) { Text(label, color = Muted, fontSize = 8.sp, fontWeight = FontWeight.Bold); Text(value, color = Ink, fontSize = 21.sp, fontWeight = FontWeight.Bold); Text(detail, color = Orange, fontSize = 9.sp) } } }
 @Composable private fun MapCard(zones: List<Zone>, selectedId: String, scenario: String, select: (String) -> Unit, dedicated: Boolean = false) {
-    var fullScreen by remember { mutableStateOf(false) }
+    var fullScreen by remember { mutableStateOf(dedicated) }
     var mapMode by remember { mutableStateOf("Risk") }
+    var controlsOpen by remember { mutableStateOf(false) }
     val mapContent: @Composable (Modifier) -> Unit = { mapModifier ->
         AndroidView(
             modifier = mapModifier,
             factory = { context ->
                 Configuration.getInstance().userAgentValue = context.packageName
-                MapView(context).apply { setTileSource(mapTileSource("Risk")); setHorizontalMapRepetitionEnabled(false); setVerticalMapRepetitionEnabled(false); setMultiTouchControls(false); controller.setZoom(6.0); controller.setCenter(GeoPoint(26.85, 93.7)) }
+                MapView(context).apply { setTileSource(mapTileSource("Risk")); setHorizontalMapRepetitionEnabled(false); setVerticalMapRepetitionEnabled(false); setScrollableAreaLimitDouble(BoundingBox(29.8, 97.7, 21.4, 88.0)); minZoomLevel = 5.0; maxZoomLevel = 11.0; setMultiTouchControls(false); controller.setZoom(6.0); controller.setCenter(GeoPoint(26.85, 93.7)) }
             },
             update = { map ->
                 map.setTileSource(mapTileSource(mapMode))
-                map.setMultiTouchControls(dedicated || fullScreen)
-                map.setOnTouchListener { _, event -> !dedicated && !fullScreen && event.actionMasked != android.view.MotionEvent.ACTION_UP }
+                map.setMultiTouchControls(dedicated && !fullScreen)
+                map.setOnTouchListener { _, event -> fullScreen || (!dedicated && event.actionMasked != android.view.MotionEvent.ACTION_UP) }
                 map.overlays.clear()
                 zones.forEach { zone ->
                     val point = GeoPoint(zone.latitude, zone.longitude)
-                    if (zone.id == selectedId && (mapMode == "Risk" || mapMode == "Exposure")) {
-                        map.overlays.add(Polygon().apply { points = impactRing(point, if (zone.score >= 75) 5000.0 else if (zone.score >= 55) 3500.0 else 2200.0); fillColor = Color(0x22D5A03B).toArgb(); strokeColor = Color(0xFFD5A03B).toArgb(); strokeWidth = 3f })
-                        map.overlays.add(Polygon().apply { points = impactRing(point, if (zone.score >= 75) 2900.0 else 1900.0); fillColor = Color(0x22D34438).toArgb(); strokeColor = Color(0xFFD34438).toArgb(); strokeWidth = 4f })
-                    }
-                    if (zone.id == selectedId && mapMode == "Rainfall") map.overlays.add(Polygon().apply { points = impactRing(point, zone.rain * 120.0); fillColor = Color(0x224E9AB9).toArgb(); strokeColor = Color(0xFF3E82A1).toArgb(); strokeWidth = 3f })
-                    map.overlays.add(Marker(map).apply { position = point; title = "${zone.name} · ${zone.score}/100 · ${zone.level}"; snippet = "${zone.district}\nTap to monitor this zone"; setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); setOnMarkerClickListener { clicked, _ -> select(zone.id); clicked.showInfoWindow(); true } })
+                    val zoneColor = color(zone.level).toArgb()
+                    val radius = when (mapMode) { "Rainfall" -> (zone.rain * 120.0).coerceIn(1800.0, 7200.0); "Exposure" -> (zone.exposure * 55.0).coerceIn(2200.0, 6200.0); else -> when { zone.score >= 75 -> 5000.0; zone.score >= 55 -> 3500.0; else -> 2200.0 } }
+                    if (mapMode == "Risk" || mapMode == "Rainfall" || mapMode == "Exposure") map.overlays.add(Polygon().apply { points = impactRing(point, radius); fillColor = Color(zoneColor).copy(alpha = if (zone.id == selectedId) .25f else .10f).toArgb(); strokeColor = zoneColor; strokeWidth = if (zone.id == selectedId) 4f else 2f })
+                    if (zone.id == selectedId && mapMode == "Risk" && zone.score >= 55) map.overlays.add(Polygon().apply { points = impactRing(point, radius * .55); fillColor = Color(Red.toArgb()).copy(alpha = .18f).toArgb(); strokeColor = Red.toArgb(); strokeWidth = 3f })
+                    if (mapMode == "Roads") { val roadPoint = GeoPoint(zone.latitude - .018, zone.longitude + .024); map.overlays.add(Polyline().apply { setPoints(listOf(point, roadPoint)); color = if (zone.score >= 55) Red.toArgb() else Muted.toArgb(); width = if (zone.score >= 55) 7f else 4f; isGeodesic = true }) }
+                    map.overlays.add(Marker(map).apply { position = point; title = "${zone.name} · ${zone.score}/100 · ${zone.level}"; snippet = "${zone.district}\nRain ${zone.rain} mm/hr · Soil ${zone.moisture}%\nAction: ${if (zone.score >= 55) "VERIFY NOW" else "MONITOR"}"; setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); setOnMarkerClickListener { clicked, _ -> select(zone.id); clicked.showInfoWindow(); true } })
                     if (zone.id == selectedId) listOf(GeoPoint(zone.latitude + .012, zone.longitude - .012), GeoPoint(zone.latitude - .011, zone.longitude - .010)).forEachIndexed { index, shelter -> map.overlays.add(Marker(map).apply { position = shelter; title = "SAFE SHELTER ${index + 1}"; snippet = "Move here if evacuation is advised"; setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM) }) }
                 }
                 map.invalidate()
                 zones.firstOrNull { it.id == selectedId }?.let { focused -> if (map.tag != focused.id) { map.controller.animateTo(GeoPoint(focused.latitude, focused.longitude)); map.tag = focused.id } }
-            }
+            },
+            onRelease = { map -> map.onPause(); map.onDetach() }
         )
     }
     val controls: @Composable () -> Unit = {
         Text("GEOSPATIAL SITUATION", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text("Regional terrain view", color = Ink, fontSize = 20.sp, fontWeight = FontWeight.Bold); IconButton(onClick = { fullScreen = !fullScreen }) { Icon(if (fullScreen) Icons.Default.FullscreenExit else Icons.Default.Fullscreen, if (fullScreen) "Exit full screen map" else "Open full screen map", tint = Ink) } }
         Text("${mapMode.uppercase()} OVERLAY  ·  OPEN MAP DATA", color = Muted, fontSize = 9.sp)
-        Spacer(Modifier.height(4.dp)); PlacePicker(zones, selectedId, select); Spacer(Modifier.height(3.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) { listOf("Risk", "Rainfall", "Terrain", "Exposure", "Roads", "Satellite").forEach { mode -> Button(onClick = { mapMode = mode }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 1.dp, vertical = 0.dp), colors = ButtonDefaults.buttonColors(containerColor = if (mode == mapMode) Orange else Ink)) { Text(mode, fontSize = 8.sp) } } }
+        Spacer(Modifier.height(4.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) { IconButton(onClick = { controlsOpen = !controlsOpen }) { Icon(if (controlsOpen) Icons.Default.Close else Icons.Default.Menu, if (controlsOpen) "Close map controls" else "Open map controls", tint = Ink) } }
+        if (controlsOpen) { PlacePicker(zones, selectedId, select); Spacer(Modifier.height(3.dp)); Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) { listOf("Risk", "Rainfall", "Terrain", "Exposure", "Roads", "Satellite").forEach { mode -> Button(onClick = { mapMode = mode }, modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 1.dp, vertical = 0.dp), colors = ButtonDefaults.buttonColors(containerColor = if (mode == mapMode) Orange else Ink)) { Text(mode, fontSize = 8.sp) } } } }
     }
-    @Composable fun MapSurface(modifier: Modifier) { Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFD8E1D9)), shape = RoundedCornerShape(3.dp), modifier = modifier) { Column(Modifier.fillMaxSize().padding(10.dp)) { controls(); Spacer(Modifier.height(8.dp)); Box(Modifier.fillMaxWidth().weight(1f)) { mapContent(Modifier.fillMaxSize()); Text("Risk zones  ·  Map locked in dashboard · expand for pan and zoom", Modifier.align(Alignment.BottomStart).padding(8.dp).background(Color.White.copy(alpha = .88f)).padding(6.dp), color = Muted, fontSize = 10.sp) } } } }
-    if (fullScreen) Dialog(onDismissRequest = { fullScreen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) { MapSurface(Modifier.fillMaxSize().padding(4.dp)) } else MapSurface(Modifier.fillMaxWidth().height(if (dedicated) 620.dp else 390.dp))
+    @Composable fun MapSurface(modifier: Modifier) { Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFD8E1D9)), shape = RoundedCornerShape(3.dp), modifier = modifier) { Box(Modifier.fillMaxSize().padding(10.dp)) { mapContent(Modifier.fillMaxSize()); Text(if (fullScreen) "NER view locked" else "Preview · open View map for full-screen controls", Modifier.align(Alignment.BottomStart).padding(8.dp).background(Color.White.copy(alpha = .88f)).padding(6.dp), color = Muted, fontSize = 10.sp) } } }
+    @Composable fun MapWorkspace(modifier: Modifier) { Column(modifier) { controls(); Spacer(Modifier.height(8.dp)); MapSurface(Modifier.fillMaxWidth().weight(1f)) } }
+    if (fullScreen) Dialog(onDismissRequest = { fullScreen = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) { MapWorkspace(Modifier.fillMaxSize().padding(4.dp)) } else MapWorkspace(Modifier.fillMaxWidth().height(if (dedicated) 620.dp else 170.dp))
 }
 @Composable private fun Incident(zone: Zone) { Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(3.dp)) { Column(Modifier.padding(16.dp)) { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Column { Text("SELECTED INCIDENT", color = Orange, fontSize = 10.sp, fontWeight = FontWeight.Bold); Text(zone.name, color = Ink, fontSize = 21.sp, fontWeight = FontWeight.Bold); Text(zone.district, color = Muted, fontSize = 12.sp) }; Badge(zone.level) }; Spacer(Modifier.height(14.dp)); Text(zone.score.toString(), color = color(zone.level), fontSize = 40.sp, fontWeight = FontWeight.Bold); Text("RISK SCORE  /  100", color = Muted, fontSize = 9.sp); Spacer(Modifier.height(10.dp)); Text("WHY IS IT RISKY?", color = Ink, fontWeight = FontWeight.Bold, fontSize = 11.sp); Text("Heavy rainfall and rising soil saturation are increasing landslide risk on steep, susceptible terrain.", color = Muted, fontSize = 12.sp) } } }
 @Composable private fun Badge(level: String) { Text(level.uppercase(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.background(color(level), RoundedCornerShape(3.dp)).padding(8.dp)) }
