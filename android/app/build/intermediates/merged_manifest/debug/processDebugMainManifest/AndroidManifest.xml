@@ -47,6 +47,7 @@
         android:icon="@drawable/ic_bhusanket"
         android:label="BhuSanket"
         android:roundIcon="@drawable/ic_bhusanket"
+        android:testOnly="true"
         android:theme="@style/Theme.BhuSanket" >
         <activity
             android:name="com.bhusanket.app.MainActivity"
