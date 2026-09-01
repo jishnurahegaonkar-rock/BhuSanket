@@ -496,6 +496,45 @@ button {
     background: #b7ceca;
 }
 
+.map-fallback {
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    display: grid;
+    place-content: center;
+    gap: 6px;
+    padding: 24px;
+    text-align: center;
+    color: #24464d;
+    background: repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 1px, transparent 1px 12px), #dcebe7;
+}
+
+.map-fallback strong {
+    font: 600 20px 'Barlow Condensed';
+}
+
+.map-fallback span {
+    max-width: 300px;
+    color: #60777b;
+    font-size: 12px;
+}
+
+.map-tile-error:before {
+    content: 'BASEMAP OFFLINE · GIS overlays remain available';
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    z-index: 650;
+    transform: translateX(-50%);
+    padding: 5px 8px;
+    color: #80501c;
+    background: rgba(255, 248, 232, .94);
+    border: 1px solid #e7c58d;
+    font: 600 9px 'Barlow Condensed';
+    letter-spacing: .7px;
+    white-space: nowrap;
+}
+
 .map-overlay {
     position: absolute;
     left: 14px;
@@ -561,6 +600,7 @@ button {
 .legend-dot.rainfall-high { background: #b93432; }
 .legend-dot.settlement { background: #5b6470; }
 .legend-dot.asset { background: #c87422; }
+.legend-dot.mountain { background: #456b62; }
 
 .map-disclaimer {
     position: absolute;
@@ -799,6 +839,7 @@ button {
 .gis-sensor { background: #27738a; }
 .gis-settlement { background: #5b6470; }
 .gis-road { background: #66513d; }
+.gis-mountain { background: #456b62; }
 .gis-infrastructure { background: #865b27; }
 
 .gis-popup { min-width: 230px; color: #2a464d; }

@@ -5,7 +5,10 @@ const BhuSanketAuth = (() => {
     let mode = 'signin';
     const config = window.BHUSANKET_CONFIG || {};
     const firebaseConfig = config.firebase || {};
-    const configured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && window.firebase);
+    const localDemo = window.location.protocol === 'file:'
+        || window.location.hostname === 'localhost'
+        || window.location.hostname === '127.0.0.1';
+    const configured = !localDemo && Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && window.firebase);
     const roles = ['Admin', 'District official', 'Operator', 'Field officer', 'Citizen'];
     const privilegedRoles = ['Admin', 'Operator', 'Field officer'];
     const $ = id => document.getElementById(id);
